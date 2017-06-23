@@ -5,6 +5,20 @@
  * patch file, and ensuring that the user has all the dependencies that they need.
  */
 
+import com.bloidonia.groovy.extensions.FileExtensionMethods
+import org.gradle.internal.os.OperatingSystem
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'com.bloidonia', name: 'groovy-common-extensions', version: '0.7.0'
+    }
+}
+
+//apply plugin: 'groovy-common-extensions'
+
 task help {
     doLast {
     logger.info('''\
@@ -48,60 +62,68 @@ task verifyEnvironment << {
     logger.info('All build tools detected')
 }
 
-task makeMcpDir(dependsOn: verifyEnvironment) << {
-    def mcpDir = new File(project.buildDir, '../mcp')
-    if(!mcpDir.exists()) {
-        mcpDir.mkdirs()
+task downloadMcp(dependsOn: verifyEnvironment) << {
+    download {
+        src 'http://www.modcoderpack.com/website/sites/default/files/releases/mcp931.zip'
+        dest 'mcp931.zip'
     }
-}
 
-task downloadMcp(type: Download, dependsOn: makeMcpDir) << {
-    src 'http://www.modcoderpack.com/website/sites/default/files/releases/mcp931.zip'
-    dest 'mcp.zip'
-}
-
-task unzipMcp(type: Copy, dependsOn: downloadMcp) << {
     logger.info('Unzipping MCP...')
-    def zipFile = file('dump_not_exist_mcp931.zip')
-    def outputDir = file("mcp/")
-
-    logger.info('zipFile: ' + zipFile + ' outputDir: ' + outputDir)
- 
-    from zipTree(zipFile)
-    into outputDir
+    Collection<File> extractedFiles = FileExtensionMethods.unzip(new File('./mcp931.zip'))
+    logger.info('Unzipping complete')
 }
 
-task decompileMcp(dependsOn: unzipMcp) << {
-    def decompileResult = (project.buildDir + '../mcp/decompile.bat').execute()
-    if(decompileResult.exitValue() > 0) {
-        logger.error('Could not decompile MCP. Check the output log, fix those problems, and try again')
-        throw new GradleScriptException()
+task decompileMcp(dependsOn: downloadMcp) << {
+    new ByteArrayOutputStream().withStream { os ->
+        def result = exec {
+            if(OperatingSystem.current().isWindows()) {
+                commandLine './runtime/bin/python/python_mcp', 'runtime/decompile.py'
+            } else {
+                commandLine 'python2', 'runtime/decompile.py'
+            }
+
+            standardOutput = os
+        }
+        def outputAsString = os.toString()
+        println "${outputAsString}"
     }
 }
 
-task copyMcCode(type: Copy, dependsOn: decompileMcp) << {
-    from 'mcp/src/minecraft'
+task copyMcCode(type: Copy, dependsOn: decompileMcp) {
+    outputs.upToDateWhen { false }
+    from 'src/minecraft'
     into 'src/main/java'
 }
 
-task copyMcAssets(type: Copy, dependsOn: copyMcCode) << {
-    from 'mcp/temp/src/minecraft/assets'
+task copyMcAssets(type: Copy, dependsOn: copyMcCode) {
+    outputs.upToDateWhen { false }
+    from 'temp/src/minecraft/assets'
     into 'src/main/resources/assets'
 }
 
-task copyMcPack(type: Copy, dependsOn: copyMcAssets) << {
-    from 'mcp/temp/src/minecraft/pack.png'
+task copyMcPack(type: Copy, dependsOn: copyMcAssets) {
+    outputs.upToDateWhen { false }
+    from 'temp/src/minecraft/pack.png'
     into 'src/main/resources/pack.png'
 }
 
-task copyJars(type: Copy, dependsOn: copyMcPack) << {
-    from 'mcp/jars'
-    into 'jars'
-}
+task applyPatch(dependsOn: copyMcPack) << {
+    new ByteArrayOutputStream().withStream { os ->
+        try {
+            def result = exec {
+                commandLine "${project.projectDir}/runtime/bin/applydiff.exe", '-p1', '-i', "${project.projectDir}/patches/nova.patch"
+                workingDir 'src/main/java/net'
 
-task applyPatch(type: Exec, dependsOn: copyJars) << {
-    commandLine '../../../../mcp/runtime/bin/applydiff.exe' '-p1' '-i' '../../../../patches/nova.patch'
-    workingDir 'src/main/java/net'
+                standardOutput = os
+                errorOutput = os
+            }
+            println "${result}"
+        } catch(Exception e) {
+            e.printStackTrace()
+        }
+        def outputAsString = os.toString()
+        println "${outputAsString}"
+    }
 }
 
 task cleanupMcp(dependsOn: applyPatch) << {
@@ -109,12 +131,96 @@ task cleanupMcp(dependsOn: applyPatch) << {
     mcpDir.delete()
 }
 
-task initSubmodules(type: Exec, dependsOn: cleanupMcp) << {
-    commandLine 'git' 'submodule' 'update' '--init' '--recursive'
+task initSubmodules(dependsOn: cleanupMcp) << {
+    new ByteArrayOutputStream().withStream { os ->
+        try {
+            def result = exec {
+                commandLine 'git', 'submodule', 'update', '--init', '--recursive'
+
+                standardOutput = os
+                errorOutput = os
+            }
+            println "${result}"
+        } catch(Exception e) {
+            e.printStackTrace()
+        }
+        def outputAsString = os.toString()
+        println "${outputAsString}"
+    }
 }
 
 task setup(dependsOn: initSubmodules) << {
     logger.info('Nova setup succesfully')
+}
+
+task makePatch() << {
+    new ByteArrayOutputStream().withStream { os ->
+        try {
+            def result = exec {
+                commandLine 'git', 'diff', 'origin/minecrafts-1.10-mcp'
+                workingDir 'src/main/java/net'
+
+                standardOutput = os
+                errorOutput = os
+            }
+            println "${result}"
+        } catch(Exception e) {
+            e.printStackTrace()
+            def outputAsString = os.toString()
+            println "${outputAsString}"
+        }
+        def outputAsString = os.toString()
+        println "${outputAsString}"
+
+        new File("patches/nova.patch").withWriter { out ->
+            outputAsString.each {
+                out.println it
+            }
+        }
+    }
+}
+
+clean.doFirst {
+    delete "src/minecraft/"
+    delete "bin"
+    delete "conf"
+    delete "eclipse"
+    delete "libs"
+    delete "logs"
+    delete "mappingviewer"
+    delete "mcp"
+    delete "reobf"
+    delete "runtime"
+    delete "temp"
+    delete "cleanup.sh"
+    delete "cleanup.bat"
+    delete "decompile.sh"
+    delete "decompile.bat"
+    delete "getchangedsrc.sh"
+    delete "getchangedsrc.bat"
+    delete "mcp931.zip"
+    delete "recompile.bat"
+    delete "recompile.sh"
+    delete "reformat.sh"
+    delete "reformat.bat"
+    delete "reobfuscate.sh"
+    delete "reobfuscate.bat"
+    delete "reobfuscate_srg.sh"
+    delete "reobfuscate_srg.bat"
+    delete "startclient.sh"
+    delete "startclient.bat"
+    delete "startserver.sh"
+    delete "startserver.bat"
+    delete "updateids.sh"
+    delete "updateids.bat"
+    delete "updatemcp.sh"
+    delete "updatemcp.bat"
+    delete "updatemd5.sh"
+    delete "updatemd5.bat"
+    delete "updatenames.sh"
+    delete "updatenames.bat"
+
+    println "Removed MCP files"
 }
 
 static void checkCMake() {
