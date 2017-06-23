@@ -17,7 +17,7 @@ namespace nova {
 
         // TODO: Set texture format
         for(unsigned int i = 0; i < num_color_attachments; i++) {
-            glTextureStorage2D(color_attachments[i], 1, GL_RGBA, width, height);
+            glTextureStorage2D(color_attachments[i], 1, GL_RGBA16F, width, height);
             glNamedFramebufferTexture(framebuffer_id, GL_COLOR_ATTACHMENT0 + i, color_attachments[i], 0);
             color_attachments_map[i] = color_attachments[i];
         }
@@ -49,7 +49,7 @@ namespace nova {
     }
 
     void framebuffer::check_status() {
-        auto status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+        auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         switch(status) {
             case GL_FRAMEBUFFER_COMPLETE:
                 LOG(DEBUG) << "Framebuffer " << framebuffer_id << " is complete";

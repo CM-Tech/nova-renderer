@@ -6,6 +6,10 @@
             "filters": "geometry_type::fullscreen_quad"
         },
         {
+            "name": "final",
+            "filters": "geometry_type::fullscreen_quad"
+        },
+        {
             "name": "gbuffers_basic",
             "filters": "sky_object"
         },

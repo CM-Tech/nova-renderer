@@ -54,6 +54,7 @@ layout(std140) uniform per_frame_uniforms {
 
 in vec2 uv;
 in vec4 color;
+in vec3 worldPosition;
 
 out vec4 color_out;
 
@@ -70,7 +71,7 @@ void main() {
         color_out = vec4(0, 0, 1, 0.5);
        
     }
-    color_out = vec4(0.1, 0.5, 1, 0.5);
+    color_out = vec4(vec3(0.05, 0.25, 0.9), 0.25);
     
 
 

@@ -36,6 +36,8 @@ namespace nova {
 
         void set_depth_buffer(GLuint depth_buffer);
 
+        void check_status();
+
     private:
         GLuint framebuffer_id;
 
@@ -53,8 +55,6 @@ namespace nova {
         bool has_depth_buffer = false;
 
         framebuffer(unsigned int width, unsigned int height, unsigned int num_color_attachments);
-
-        void check_status();
     };
 
     /*!

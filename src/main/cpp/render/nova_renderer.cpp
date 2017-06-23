@@ -82,12 +82,64 @@ namespace nova {
     }
 
     void nova_renderer::render_shadow_pass() {
+        //shadow_camera.position = {100, 100, 100};
+        //shadow_camera.rotation = {0, -1};
         LOG(TRACE) << "Rendering shadow pass";
+        /*auto settings = render_settings->get_options()["settings"];
+        // size of the shadow map
+        GLuint shadowMapSize = 1024;//settings["shadowMapResolution"];
+GLuint shadowFramebuffer;
+//glClear(GL_DEPTH_BUFFER_BIT);
+//glGenFramebuffers(1, &shadowFramebuffer);
+LOG(INFO) << "Bind Shadow";
+shadow_framebuffer->bind();
+glClear(GL_DEPTH_BUFFER_BIT);
+//shadow_framebuffer->check_status();
+LOG(INFO) << "End Bind Shadow";*/
+        // create the shadow map
+        /*GLuint shadowMap;
+        glGenTextures(1, &shadowMap);
+        glBindTexture(GL_TEXTURE_2D, shadowMap);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, shadowMapSize, shadowMapSize, 
+                        0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        // GL_CLAMP_TO_EDGE setups the shadow map in such a way that
+        // fragments for which the shadow map is undefined
+        // will get values from closest edges of the shadow map
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // comparison mode of the shadow map
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_TEXTURE_2D, shadowMap, 1);
+        ////////////////////////////////////////////////////
+*/
+        // create framebuffer
+        //LOG(INFO) << "Bind Shadow";
+        //glBindFramebuffer(GL_FRAMEBUFFER, shadowFramebuffer);
+        
+        /*auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+    LOG(INFO) << "Framebuffer not complete: " << fboStatus;
+        LOG(INFO) << "Done Bind Shadow";*/
+        
+
+        // depth is stored in z-buffer to which the shadow map is attached,
+        // so there is no need for any color buffers
+        //glDrawBuffer(GL_NONE);
+        //auto& terrain_shader = loaded_shaderpack->get_shader("gbuffers_terrain");
+        //render_shader(terrain_shader);
     }
 
     void nova_renderer::render_gbuffers() {
         LOG(TRACE) << "Rendering gbuffer pass";
-        //main_framebuffer->bind();
+        main_framebuffer->bind();
+        main_framebuffer->check_status();
+        
 
         // TODO: Get shaders with gbuffers prefix, draw transparents last, etc
         auto& terrain_shader = loaded_shaderpack->get_shader("gbuffers_terrain");
@@ -102,6 +154,29 @@ namespace nova {
 
     void nova_renderer::render_final_pass() {
         LOG(TRACE) << "Rendering final pass";
+        // The fullscreen quad's FBO
+        GLuint quad_VertexArrayID;
+        glGenVertexArrays(1, &quad_VertexArrayID);
+        glBindVertexArray(quad_VertexArrayID);
+
+        static const GLfloat g_quad_vertex_buffer_data[] = {
+            -1.0f, -1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            1.0f,  1.0f, 0.0f,
+        };
+
+        GLuint quad_vertexbuffer;
+        glGenBuffers(1, &quad_vertexbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        auto& final_shader = loaded_shaderpack->get_shader("final");
+        final_shader.bind();
+        
+        
     }
 
     void nova_renderer::render_gui() {
@@ -179,7 +254,7 @@ namespace nova {
             case GL_DEBUG_TYPE_OTHER:
                 return "other";
             default:
-                return "something else somwhow";
+                return "something else somehow";
         }
     }
 
@@ -268,8 +343,9 @@ namespace nova {
         // For now, just create framebuffers with all possible attachments
 
         auto settings = render_settings->get_options()["settings"];
-
-        main_framebuffer_builder.set_framebuffer_size(settings["viewWidth"], settings["viewHeight"])
+        int viewWidth=854;//(settings["viewWidth"]); 
+        int viewHeight =480;//(settings["viewHeight"]);
+        main_framebuffer_builder.set_framebuffer_size(settings["viewWidth"],settings["viewHeight"])
                                 .enable_color_attachment(0)
                                 .enable_color_attachment(1)
                                 .enable_color_attachment(2)
@@ -280,7 +356,7 @@ namespace nova {
                                 .enable_color_attachment(7);
 
         main_framebuffer = std::make_unique<framebuffer>(main_framebuffer_builder.build());
-
+        LOG(INFO) << "Make Shadow SIZE "<< settings["shadowMapResolution"];//settings["shadowMapResolution"];
         shadow_framebuffer_builder.set_framebuffer_size(settings["shadowMapResolution"], settings["shadowMapResolution"])
                                   .enable_color_attachment(0)
                                   .enable_color_attachment(1)
@@ -288,13 +364,16 @@ namespace nova {
                                   .enable_color_attachment(3);
 
         shadow_framebuffer = std::make_unique<framebuffer>(shadow_framebuffer_builder.build());
-
+        /*GLuint shadowMap;
+        glGenTextures(1, &shadowMap);
+        shadow_depth_textures[0]=shadowMap;
+        shadow_framebuffer->set_depth_buffer(shadow_depth_textures[0]);*/
+        LOG(INFO) << "Made Shadow Frame Buffer";
     }
 
     void nova_renderer::deinit() {
         instance.release();
     }
-
     void nova_renderer::render_shader(gl_shader_program &shader) {
         LOG(TRACE) << "Rendering everything for shader " << shader.get_name();
         shader.bind();
@@ -313,6 +392,9 @@ namespace nova {
             if(geom.data_texture) {
                 textures->get_texture(*geom.data_texture).bind(2);
             }
+            //glBindTexture (GL_TEXTURE_2D, shadow_depth_textures[0]);
+            //glActiveTexture(GL_TEXTURE3);
+            //shadowMap.bind(3);
 
             upload_model_matrix(geom, shader);
 
@@ -320,6 +402,7 @@ namespace nova {
             geom.geometry->draw();
         }
     }
+    
 
     void nova_renderer::upload_model_matrix(render_object &geom, gl_shader_program &program) const {
         glm::mat4 model_matrix = glm::translate(glm::mat4(1), geom.position);
@@ -353,12 +436,16 @@ namespace nova {
         auto per_frame_uniform_data = per_frame_uniforms{};
         per_frame_uniform_data.gbufferProjection = player_camera.get_projection_matrix();
         per_frame_uniform_data.gbufferModelView = player_camera.get_view_matrix();
-
+        per_frame_uniform_data.shadowProjection = shadow_camera.get_projection_matrix();
+        per_frame_uniform_data.shadowModelView = shadow_camera.get_view_matrix();
         per_frame_ubo.send_data(per_frame_uniform_data);
     }
 
     camera &nova_renderer::get_player_camera() {
         return player_camera;
+    }
+    camera &nova_renderer::get_shadow_camera() {
+        return shadow_camera;
     }
 
     void link_up_uniform_buffers(std::unordered_map<std::string, gl_shader_program> &shaders, uniform_buffer_store &ubos) {

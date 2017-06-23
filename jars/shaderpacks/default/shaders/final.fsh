@@ -1,9 +1,6 @@
 #version 450
 
-layout(location = 0) in vec3 position_in;
-layout(location = 1) in vec2 uv_in;
-layout(location = 2) in vec2 lightmap_uv_in;
-layout(location = 3) in vec3 normal_in;
+layout(binding = 0) uniform sampler2D colortex;
 
 layout(std140) uniform per_frame_uniforms {
     mat4 gbufferModelView;
@@ -55,16 +52,19 @@ layout(std140) uniform per_frame_uniforms {
     float centerDepthSmooth;
 };
 
-uniform mat4 gbufferModel;
+in vec2 uv;
+in vec4 color;
 
-out vec2 uv;
-out vec4 color;
-out vec3 worldPosition;
+out vec4 color_out;
 
 void main() {
-	gl_Position = gbufferProjection * gbufferModelView * gbufferModel * vec4(position_in, 1.0f);
-
-	uv = uv_in;
-	color = vec4(1);
-    worldPosition=position_in;
+    if(textureSize(colortex, 0).x > 0) {
+        vec4 tex_sample = texture(colortex, uv);
+        if(tex_sample.a < 0.01) {
+            discard;
+        }
+        color_out = tex_sample * color;
+    } else {
+        color_out = vec4(1, 0, 1, 1);
+    }
 }

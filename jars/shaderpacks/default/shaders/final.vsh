@@ -2,8 +2,7 @@
 
 layout(location = 0) in vec3 position_in;
 layout(location = 1) in vec2 uv_in;
-layout(location = 2) in vec2 lightmap_uv_in;
-layout(location = 3) in vec3 normal_in;
+layout(location = 2) in vec4 color_in;
 
 layout(std140) uniform per_frame_uniforms {
     mat4 gbufferModelView;
@@ -59,12 +58,10 @@ uniform mat4 gbufferModel;
 
 out vec2 uv;
 out vec4 color;
-out vec3 worldPosition;
 
 void main() {
-	gl_Position = gbufferProjection * gbufferModelView * gbufferModel * vec4(position_in, 1.0f);
+	gl_Position = gbufferModel * vec4(position_in, 1.0f);
 
 	uv = uv_in;
-	color = vec4(1);
-    worldPosition=position_in;
+	color = color_in;
 }

@@ -87,6 +87,8 @@ namespace nova {
 
         camera& get_player_camera();
 
+        camera& get_shadow_camera();
+
         // Overrides from iconfig_listener
 
         void on_config_change(nlohmann::json& new_config);
@@ -118,6 +120,8 @@ namespace nova {
         framebuffer_builder main_framebuffer_builder;
 
         camera player_camera;
+        
+        camera shadow_camera;
 
         /*!
          * \brief Renders the GUI of Minecraft

@@ -58,11 +58,15 @@ layout(std140) uniform per_frame_uniforms {
 uniform mat4 gbufferModel;
 
 out vec2 uv;
+out vec2 lightmap_uv;
 out vec4 color;
+out vec3 worldPosition;
 
 void main() {
 	gl_Position = gbufferProjection * gbufferModelView * gbufferModel * vec4(position_in, 1.0f);
 
 	uv = uv_in;
+    lightmap_uv = lightmap_uv_in;
 	color = vec4(1);
+    worldPosition=position_in;
 }

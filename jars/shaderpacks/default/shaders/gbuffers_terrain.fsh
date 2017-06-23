@@ -1,6 +1,7 @@
 #version 450
 
 layout(binding = 0) uniform sampler2D colortex;
+layout(binding = 3) uniform sampler2D shadowtex0;
 
 layout(std140) uniform per_frame_uniforms {
     mat4 gbufferModelView;
@@ -53,7 +54,9 @@ layout(std140) uniform per_frame_uniforms {
 };
 
 in vec2 uv;
+in vec2 lightmap_uv;
 in vec4 color;
+in vec3 worldPosition;
 
 out vec4 color_out;
 
@@ -69,6 +72,17 @@ void main() {
         color_out = vec4(1, 0, 1, 1);
        
     }
+    /*if(textureSize(shadowtex0, 0).x > 0) {
+        vec4 tex_sample = texture(shadowtex0, lightmap_uv);
+        //if(tex_sample.a < 0.01) {
+        //    discard;
+        //}
+        color_out = color_out+vec4(vec3(tex_sample.r/10+tex_sample.g/10+tex_sample.a/10+ tex_sample.b/10),0);// * color;
+        
+    } else {
+        color_out = vec4(1, 0, 1, 1);
+       
+    }*/
 
 
     // color_out = vec4(1, 0, 1, 1); // color;
