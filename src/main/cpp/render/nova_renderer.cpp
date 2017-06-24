@@ -155,11 +155,13 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
     void nova_renderer::render_final_pass() {
         LOG(TRACE) << "Rendering final pass";
         // The fullscreen quad's FBO
+        
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
         auto& final_shader = loaded_shaderpack->get_shader("final");
         final_shader.bind();
         upload_final_model_matrix(final_shader);
+        glBindTextureUnit(2, (*main_framebuffer.get()).framebuffer_id);
         screenQuad.geometry->set_active();
         screenQuad.geometry->draw();
         /*glMatrixMode(GL_PROJECTION);						// Select The Projection Matrix
@@ -210,6 +212,7 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
                 auto color_texture = textures->get_texture(geom.color_texture);
                 color_texture.bind(0);
             }
+            //LOG(TRACE) << geom.geometry.vertices;
             geom.geometry->set_active();
             geom.geometry->draw();
         }
@@ -350,13 +353,13 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
         link_up_uniform_buffers(loaded_shaderpack->get_loaded_shaders(), *ubo_manager);
         LOG(DEBUG) << "Linked up UBOs";
 auto screenMesh = mesh_definition{};
-        screenMesh.vertex_format = format::POS_UV_LIGHTMAPUV_NORMAL_TANGENT;
+        screenMesh.vertex_format = format::POS_UV;
 
 		auto vertices = std::vector<float>{
-            -1.0f, -1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            1.0f,  1.0f, 0.0f,
-            -1.0f,  1.0f, 0.0f
+            -1.0f, -1.0f, 0.0f,0.0f,0.0f,
+            1.0f, -1.0f, 0.0f,1.0f,0.0f,
+            1.0f,  1.0f, 0.0f,1.0f,1.0f,
+            -1.0f,  1.0f, 0.0f,0.0f,1.0f,
         };
 		auto indices = std::vector<unsigned int>{0,1,2,2,3,0};
         screenMesh.vertex_data = vertices;
@@ -466,10 +469,10 @@ auto screenMesh = mesh_definition{};
         float scalefactor = config["scalefactor"];
         // The GUI matrix is super simple, just a viewport transformation
         glm::mat4 gui_model(1.0f);
-        gui_model = glm::translate(gui_model, glm::vec3(-1.0f, 1.0f, 0.0f));
+        /*gui_model = glm::translate(gui_model, glm::vec3(-1.0f, 1.0f, 0.0f));
         gui_model = glm::scale(gui_model, glm::vec3(scalefactor, scalefactor, 1.0f));
         gui_model = glm::scale(gui_model, glm::vec3(1.0 / view_width, 1.0 / view_height, 1.0));
-        gui_model = glm::scale(gui_model, glm::vec3(1.0f, -1.0f, 1.0f));
+        gui_model = glm::scale(gui_model, glm::vec3(1.0f, -1.0f, 1.0f));*/
 
         auto model_matrix_location = program.get_uniform_location("gbufferModel");
 

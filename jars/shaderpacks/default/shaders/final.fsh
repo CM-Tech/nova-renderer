@@ -63,7 +63,8 @@ void main() {
        
         color_out = tex_sample * color;
     } else {
-        color_out = vec4(1, 0, 1, 1);
+        color_out = vec4(uv.x, uv.y, 1-uv.x, 1);
     }
-    // color_out = vec4(1, 0, 1, 1);
+    //color_out = vec4(uv.x, uv.y, 1-uv.x, 1);
+    //color_out = vec4(1, 0, 1, 1);
 }

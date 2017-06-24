@@ -22,6 +22,7 @@ namespace nova {
         friend class framebuffer_builder;
 
     public:
+        GLuint framebuffer_id;
         framebuffer(framebuffer &&other);
 
         ~framebuffer();
@@ -39,7 +40,7 @@ namespace nova {
         void check_status();
 
     private:
-        GLuint framebuffer_id;
+       
 
         /*!
          * \brief All the color attachments that this framebuffer has
