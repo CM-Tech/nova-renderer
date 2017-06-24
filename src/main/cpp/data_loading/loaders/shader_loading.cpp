@@ -34,6 +34,9 @@ namespace nova {
             ".vert",
             ".vert.spv"
     };
+    std::vector<std::string> geometry_extensions = {
+            ".geo"
+    };
 
     shaderpack load_shaderpack(const std::string &shaderpack_name) {
         auto shader_sources = std::unordered_map<std::string, shader_definition>{};
@@ -94,6 +97,11 @@ namespace nova {
 
                 shader.vertex_source = load_shader_file(shader_path, vertex_extensions);
                 shader.fragment_source = load_shader_file(shader_path, fragment_extensions);
+                try{
+                    shader.geometry_source = load_shader_file_simple(shader_path, geometry_extensions);
+                }catch(std::exception& e) {
+                LOG(ERROR) << "Could not load shader geo " << shader.name << ". Reason: " << e.what();
+            }
 
                 sources.push_back(shader);
             } catch(std::exception& e) {
@@ -191,6 +199,23 @@ namespace nova {
         }
 
         throw resource_not_found(shader_path);
+    }
+    std::vector<shader_line> load_shader_file_simple(const std::string &shader_path, const std::vector<std::string> &extensions) {
+        std::vector<shader_line> file_source;
+        for(auto &extension : extensions) {
+            auto full_shader_path = shader_path + extension;
+            LOG(TRACE) << "Trying to load shader file " << full_shader_path;
+
+            std::ifstream stream(full_shader_path, std::ios::in);
+            if(stream.good()) {
+                LOG(INFO) << "Loading shader file " << full_shader_path;
+                return read_shader_stream(stream, full_shader_path);
+            } else {
+                LOG(WARNING) << "Could not read file " << full_shader_path;
+            }
+        }
+
+        return file_source;
     }
 
     std::vector<shader_line> read_shader_stream(std::istream &stream, const std::string &shader_path) {

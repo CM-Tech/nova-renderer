@@ -52,6 +52,8 @@ namespace nova {
      */
     std::vector<shader_line> load_shader_file(const std::string &shader_path, const std::vector<std::string> &extensions);
 
+    std::vector<shader_line> load_shader_file_simple(const std::string &shader_path, const std::vector<std::string> &extensions);
+
     /*!
      * \brief Loads the shader file from the provided istream
      *

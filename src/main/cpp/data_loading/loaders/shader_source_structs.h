@@ -43,6 +43,7 @@ namespace nova {
 
         std::vector<shader_line> vertex_source;
         std::vector<shader_line> fragment_source;
+        std::vector<shader_line> geometry_source;
         // TODO: Figure out how to handle geometry and tessellation shaders
 
         /*!

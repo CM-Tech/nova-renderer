@@ -13,6 +13,9 @@
 namespace nova {
     gl_shader_program::gl_shader_program(const shader_definition &source) : name(source.name) {
         filter = parse_filter_expression(source.filter_expression);
+        if(source.geometry_source.size()!=0){
+        create_shader(source.geometry_source, GL_GEOMETRY_SHADER);
+        }
         create_shader(source.vertex_source, GL_VERTEX_SHADER);
         create_shader(source.fragment_source, GL_FRAGMENT_SHADER);
 

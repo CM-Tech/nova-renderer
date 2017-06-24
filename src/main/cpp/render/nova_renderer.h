@@ -108,6 +108,7 @@ namespace nova {
         std::unique_ptr<input_handler> inputs;
 
         std::unique_ptr<mesh_store> meshes;
+        render_object screenQuad;
 
         std::unique_ptr<uniform_buffer_store> ubo_manager;
 
@@ -152,6 +153,8 @@ namespace nova {
         void render_shader(gl_shader_program& shader);
 
         void upload_gui_model_matrix(gl_shader_program &program);
+
+        void upload_final_model_matrix(gl_shader_program &program);
 
         void upload_model_matrix(render_object &geom, gl_shader_program &program) const;
 
