@@ -178,7 +178,8 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
         glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
         
-        
+        glVertexPointer(3, GL_FLOAT, 0, g_quad_vertex_buffer_data);
+        glDrawArrays( GL_TRIANGLES,0,3 );
         
     }
 
