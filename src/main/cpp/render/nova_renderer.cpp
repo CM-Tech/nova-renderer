@@ -138,7 +138,7 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
     void nova_renderer::render_gbuffers() {
         LOG(TRACE) << "Rendering gbuffer pass";
         main_framebuffer->bind();
-        main_framebuffer->check_status();
+        //main_framebuffer->check_status();
         
 
         // TODO: Get shaders with gbuffers prefix, draw transparents last, etc
