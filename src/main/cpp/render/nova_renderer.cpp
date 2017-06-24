@@ -468,7 +468,7 @@ auto screenMesh = mesh_definition{};
         glm::mat4 gui_model(1.0f);
         gui_model = glm::translate(gui_model, glm::vec3(-1.0f, 1.0f, 0.0f));
         gui_model = glm::scale(gui_model, glm::vec3(scalefactor, scalefactor, 1.0f));
-        //gui_model = glm::scale(gui_model, glm::vec3(1.0 / view_width, 1.0 / view_height, 1.0));
+        gui_model = glm::scale(gui_model, glm::vec3(1.0 / view_width, 1.0 / view_height, 1.0));
         gui_model = glm::scale(gui_model, glm::vec3(1.0f, -1.0f, 1.0f));
 
         auto model_matrix_location = program.get_uniform_location("gbufferModel");
