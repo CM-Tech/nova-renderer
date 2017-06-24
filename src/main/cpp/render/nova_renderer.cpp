@@ -155,6 +155,11 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
     void nova_renderer::render_final_pass() {
         LOG(TRACE) << "Rendering final pass";
         // The fullscreen quad's FBO
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        auto& final_shader = loaded_shaderpack->get_shader("final");
+        final_shader.bind();
+        upload_gui_model_matrix(final_shader);
         GLuint quad_VertexArrayID;
         glGenVertexArrays(1, &quad_VertexArrayID);
         glBindVertexArray(quad_VertexArrayID);
@@ -172,9 +177,7 @@ if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
         glGenBuffers(1, &quad_vertexbuffer);
         glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        auto& final_shader = loaded_shaderpack->get_shader("final");
-        final_shader.bind();
+        
         
         
     }
