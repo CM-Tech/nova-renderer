@@ -12,21 +12,50 @@ namespace nova {
     std::shared_ptr<shader_resource_manager> shader_resource_manager::instance;
 
     shader_resource_manager::shader_resource_manager() : device(render_context::instance.device) {
+       try {
+            
         create_block_textures_dsl();
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Create Block Text because " << e.what() ;
+    }
+    try{
         create_custom_textures_dsl();
         create_shadow_textures_dsl();
         create_depth_textures_dsl();
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Create Other Text because " << e.what() ;
+    }
+    try{
         create_common_ds();
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Common DS because " << e.what() ;
+    }
+    try{
         create_framebuffer_top_dsl();
         create_framebuffer_bottom_dsl();
         create_block_light_dsl();
         create_per_model_dsl();
-
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Create Stuff because " << e.what() ;
+    }
+    try {
+        
+            
         create_pipeline_layouts();
-
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Pipline Lay because " << e.what() ;
+    }
+    try {
+        
         create_descriptor_pool();
-
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Desc Pool because " << e.what() ;
+    }
+    try {
         create_desriptor_sets();
+    } catch (std::exception &e) {
+        LOG(ERROR) << "Desc Sets because " << e.what() ;
+    }
     }
 
     void shader_resource_manager::create_block_textures_dsl() {
@@ -35,7 +64,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 2;
+        create_info.bindingCount = 1;
         create_info.pBindings = bindings;
 
         block_textures_dsl = device.createDescriptorSetLayout(create_info);
@@ -47,7 +76,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 2;
+        create_info.bindingCount = 1;
         create_info.pBindings = bindings;
 
         custom_textures_dsl = device.createDescriptorSetLayout(create_info);
@@ -59,7 +88,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 2;
+        create_info.bindingCount = 1;
         create_info.pBindings = bindings;
 
         shadow_textures_dsl = device.createDescriptorSetLayout(create_info);
@@ -71,7 +100,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 2;
+        create_info.bindingCount = 1;
         create_info.pBindings = bindings;
 
         depth_textures_dsl = device.createDescriptorSetLayout(create_info);
@@ -84,7 +113,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 3;
+        create_info.bindingCount = 2;
         create_info.pBindings = bindings;
 
         common_dsl = device.createDescriptorSetLayout(create_info);
@@ -108,7 +137,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 2;
+        create_info.bindingCount = 1;
         create_info.pBindings = bindings;
 
         framebuffer_top_dsl = device.createDescriptorSetLayout(create_info);
@@ -120,7 +149,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 2;
+        create_info.bindingCount = 1;
         create_info.pBindings = bindings;
 
         framebuffer_bottom_dsl = device.createDescriptorSetLayout(create_info);
@@ -133,7 +162,7 @@ namespace nova {
         };
 
         vk::DescriptorSetLayoutCreateInfo create_info = {};
-        create_info.bindingCount = 3;
+        create_info.bindingCount = 2;
         create_info.pBindings = bindings;
 
         block_light_dsl = device.createDescriptorSetLayout(create_info);
@@ -202,7 +231,7 @@ namespace nova {
         };
 
         auto deferred_light_pl_create_info = vk::PipelineLayoutCreateInfo()
-            .setSetLayoutCount(4)
+            .setSetLayoutCount(6)
             .setPSetLayouts(deferred_light_set_layouts);
 
         layouts[pass_enum::DeferredLight] = device.createPipelineLayout(deferred_light_pl_create_info);
@@ -228,7 +257,7 @@ namespace nova {
     void shader_resource_manager::create_descriptor_pool() {
         vk::DescriptorPoolCreateInfo pool_create_info = {};
         pool_create_info.maxSets = 32;  // Nova hopefully won't need too many
-        pool_create_info.poolSizeCount = 3;
+        pool_create_info.poolSizeCount = 2;
 
         // TODO: Tune these values for actual usage needs
         vk::DescriptorPoolSize sizes[] = {

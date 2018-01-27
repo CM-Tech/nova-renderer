@@ -1,9 +1,9 @@
 #version 450
 
 layout(set = 2, binding = 0) uniform sampler2D colortex;
-layout(set = 2, binding = 3) uniform sampler2D lightmap;
+//layout(set = 2, binding = 3) uniform sampler2D lightmap;
 
-layout(set = 0, binding = 0) uniform per_frame_uniforms {
+/*layout(set = 0, binding = 0) uniform per_frame_uniforms {
     mat4 gbufferModelView;
     mat4 gbufferModelViewInverse;
     mat4 gbufferPreviousModelView;
@@ -51,7 +51,7 @@ layout(set = 0, binding = 0) uniform per_frame_uniforms {
     float wetness;
     float eyeAltitude;
     float centerDepthSmooth;
-};
+};*/
 
 layout(location = 0) in vec2 uv;
 layout(location = 1) in vec4 color;
@@ -71,7 +71,7 @@ void main() {
         color_out = vec4(1, 0, 1, 1);
     }
 
-    color_out.rgb *= texture(lightmap, lightmap_uv).rgb * color.rgb / 255.0f;
+    color_out.rgb *= color.rgb / 255.0f;//texture(lightmap, lightmap_uv).rgb * color.rgb / 255.0f;
 
     // color_out = vec4(1, 0, 1, 1); // color;
 }

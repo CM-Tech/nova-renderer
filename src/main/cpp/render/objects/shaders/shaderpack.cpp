@@ -25,7 +25,7 @@ namespace nova {
                 try {
                     loaded_shaders.emplace(shader.second.name, gl_shader_program(shader.second, shader.first, our_renderpass, pipeline_cache));
                 } catch (std::exception &e) {
-                    LOG(ERROR) << "Could not load shader " << shader.second.name << " because " << e.what();
+                    LOG(ERROR) << "Could not load shader " << shader.second.name << " because " << e.what() ;
                 }
             } else {
                 LOG(ERROR) << "Missing either vertex or fragment source for shader " << shader.second.name << ". Check earlier in the logs for a better error";
