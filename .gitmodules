@@ -46,3 +46,6 @@
 [submodule "src/main/cpp/3rdparty/vpp"]
 	path = src/main/cpp/3rdparty/vpp
 	url = https://github.com/nyorain/vpp.git
+[submodule "src/main/cpp/3rdparty/ny"]
+	path = src/main/cpp/3rdparty/ny
+	url = https://github.com/nyorain/ny.git
