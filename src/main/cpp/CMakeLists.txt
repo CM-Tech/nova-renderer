@@ -46,6 +46,7 @@ add_subdirectory(${3RD_PARTY_DIR}/spirv-headers)
 add_subdirectory(${3RD_PARTY_DIR}/spirv-tools)
 add_subdirectory(${3RD_PARTY_DIR}/glslang)
 add_subdirectory(${3RD_PARTY_DIR}/shaderc)
+add_subdirectory(${3RD_PARTY_DIR}/vpp)
 
 include_directories(SYSTEM
         ${Vulkan_INCLUDE_DIRS}
@@ -62,6 +63,7 @@ include_directories(SYSTEM
         ${3RD_PARTY_DIR}/VulkanMemoryAllocator/src
         ${3RD_PARTY_DIR}/shaderc/libshaderc/include
         ${3RD_PARTY_DIR}/minitrace
+        ${3RD_PARTY_DIR}/vpp/include
         )
 
 set(COMMON_LINK_LIBS ${CMAKE_DL_LIBS} glfw ${GLFW_LIBRARIES} ${Vulkan_LIBRARIES} ${JNI_LIBRARIES} shaderc stdc++fs)
