@@ -1,397 +1,522 @@
-//
-// Created by David on 25-Dec-15.
-//
-
-#include "nova_renderer.h"
-#include "../utils/utils.h"
-#include "../data_loading/loaders/loaders.h"
-#include "objects/render_object.h"
-#include "../data_loading/settings.h"
-#include "windowing/glfw_vk_window.h"
-#include "vulkan/command_pool.h"
-#include "objects/meshes/mesh_store.h"
-#include "objects/render_object.h"
-#include "objects/meshes/vk_mesh.h"
-#include "objects/uniform_buffers/uniform_buffer_definitions.h"
-#include "objects/uniform_buffers/uniform_buffer_store.h"
-#include "../input/InputHandler.h"
-#include "objects/renderpasses/renderpass_manager.h"
-#include "vulkan/render_context.h"
-
-#include <easylogging++.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <minitrace.h>
-
-#define UINT32_MAX  ((uint32_t)-1)
-
-INITIALIZE_EASYLOGGINGPP
-
-namespace nova {
-    std::unique_ptr<nova_renderer> nova_renderer::instance;
-    std::shared_ptr<settings> nova_renderer::render_settings;
-
-    nova_renderer::nova_renderer() {
-        game_window = std::make_shared<glfw_vk_window>();
-        LOG(TRACE) << "Window initialized";
-
-        render_context::instance.create_instance(*game_window);
-        LOG(TRACE) << "Instance created";
-        render_context::instance.setup_debug_callback();
-        LOG(TRACE) << "Debug callback set up";
-        game_window->create_surface();
-        LOG(TRACE) << "Created surface";
-        render_context::instance.find_device_and_queues();
-        LOG(TRACE) << "Found device and queue";
-        render_context::instance.create_semaphores();
-        LOG(TRACE) << "Created semaphores";
-        render_context::instance.create_command_pool_and_command_buffers();
-        LOG(TRACE) << "Created command pool";
-        render_context::instance.create_swapchain(game_window->get_size());
-        LOG(TRACE) << "Created swapchain";
-        render_context::instance.create_pipeline_cache();
-        LOG(TRACE) << "Pipeline cache created";
-
-
-        vk::FenceCreateInfo fence_create_info = {};
-
-        next_swapchain_image_acquired_fence = render_context::instance.device.createFence(fence_create_info);
-
-        LOG(INFO) << "Vulkan code initialized";
-
-        ubo_manager = std::make_shared<uniform_buffer_store>();
-        textures = std::make_shared<texture_manager>();
-        meshes = std::make_shared<mesh_store>();
-        inputs = std::make_shared<input_handler>();
-
-		render_settings->register_change_listener(ubo_manager.get());
-		render_settings->register_change_listener(game_window.get());
-        render_settings->register_change_listener(this);
-
-        render_settings->update_config_loaded();
-		render_settings->update_config_changed();
-
-        LOG(INFO) << "Finished sending out initial config";
-
-        vk::SemaphoreCreateInfo create_info = {};
-        swapchain_image_acquire_semaphore = render_context::instance.device.createSemaphore(create_info);
-
-        context = &render_context::instance;
-    }
-
-    nova_renderer::~nova_renderer() {
-        inputs.reset();
-        meshes.reset();
-        textures.reset();
-        ubo_manager.reset();
-
-        render_context::instance.vk_instance.destroy();
-        game_window.reset();
-
-        mtr_shutdown();
-    }
-
-    void nova_renderer::render_frame() {
-        begin_frame();
-
-        auto main_command_buffer = context->command_buffer_pool->get_command_buffer(0);
-
-        vk::CommandBufferBeginInfo cmd_buf_begin_info = {};
-        main_command_buffer.buffer.begin(cmd_buf_begin_info);
-        LOG(TRACE) << "Began command buffer";
-
-        player_camera.recalculate_frustum();
-
-        // Make geometry for any new chunks
-        meshes->upload_new_geometry();
-
-
-        // upload shadow UBO things
-
-        render_shadow_pass();
-
-        update_gbuffer_ubos();
-
-        render_gbuffers(main_command_buffer.buffer);
-
-        render_composite_passes();
-
-        auto window_size = game_window->get_size();
-
-        vk::RenderPassBeginInfo begin_final_pass = vk::RenderPassBeginInfo()
-                .setRenderPass(renderpasses->get_final_renderpass())
-                .setFramebuffer(renderpasses->get_framebuffer(cur_swapchain_image_index))
-                .setRenderArea({{0, 0}, {static_cast<uint32_t>(window_size.x), static_cast<uint32_t>(window_size.y)}});
-
-        main_command_buffer.buffer.beginRenderPass(&begin_final_pass, vk::SubpassContents::eInline);
-
-        render_final_pass();
-
-        // We want to draw the GUI on top of the other things, so we'll render it last
-        // Additionally, I could use the stencil buffer to not draw MC underneath the GUI. Could be a fun
-        // optimization - I'd have to watch out for when the user hides the GUI, though. I can just re-render the
-        // stencil buffer when the GUI screen changes
-        render_gui(main_command_buffer.buffer);
-
-        main_command_buffer.buffer.endRenderPass();
-
-        main_command_buffer.buffer.end();
-
-        // TODO: ParameterValidation(ERROR): object: 0x0 type: 0 location: 220 msgCode: -1: vkQueueSubmit: required parameter pSubmits[0].pWaitDstStageMask specified as NULL. (null)
-        vk::SubmitInfo submit_info = vk::SubmitInfo()
-                .setCommandBufferCount(1)
-                .setPCommandBuffers(&main_command_buffer.buffer)
-                .setWaitSemaphoreCount(0);
-        context->graphics_queue.submit(1, &submit_info, main_command_buffer.fences[cur_swapchain_image_index]);
-
-        end_frame();
-    }
-
-    void nova_renderer::render_shadow_pass() {
-        LOG(TRACE) << "Rendering shadow pass";
-    }
-
-    void nova_renderer::render_gbuffers(vk::CommandBuffer buffer) {
-        LOG(TRACE) << "Rendering gbuffer pass";
-
-        // TODO: Get shaders with gbuffers prefix, draw transparents last, etc
-        auto& terrain_shader = loaded_shaderpack->get_shader("gbuffers_terrain");
-        render_shader(buffer, terrain_shader);
-        auto& water_shader = loaded_shaderpack->get_shader("gbuffers_water");
-        render_shader(buffer, water_shader);
-    }
-
-    void nova_renderer::render_composite_passes() {
-        LOG(TRACE) << "Rendering composite passes";
-    }
-
-    void nova_renderer::render_final_pass() {
-        LOG(TRACE) << "Rendering final pass";
-        //meshes->get_fullscreen_quad->set_active();
-        //meshes->get_fullscreen_quad->draw();
-    }
-
-    void nova_renderer::render_gui(vk::CommandBuffer command) {
-        LOG(TRACE) << "Rendering GUI";
-
-        // Bind all the GUI data
-        auto &gui_shader = loaded_shaderpack->get_shader("gui");
-
-        upload_gui_model_matrix(gui_shader);
-
-        // Render GUI objects
-        std::vector<render_object>& gui_geometry = meshes->get_meshes_for_shader("gui");
-        for(const auto& geom : gui_geometry) {
-            // TODO: Bind the descriptor sets
-            if (!geom.color_texture.empty()) {
-                auto color_texture = textures->get_texture(geom.color_texture);
-                color_texture.bind(0);
-            }
-
-            // Bind the mesh
-            vk::DeviceSize offset = 0;
-            command.bindVertexBuffers(0, 1, &geom.geometry->vertex_buffer, &offset);
-            command.bindIndexBuffer(geom.geometry->indices, offset, vk::IndexType::eUint32);
-
-            command.drawIndexed(geom.geometry->num_indices, 1, 0, 0, 0);
-        }
-    }
-
-    bool nova_renderer::should_end() {
-        // If the window wants to close, the user probably clicked on the "X" button
-        return game_window->should_close();
-    }
-
-    void nova_renderer::init() {
-        mtr_init("nova_profile.json");
-        MTR_META_PROCESS_NAME("Nova Renderer")
-        MTR_META_THREAD_NAME("Main Nova Thread")
-
-        MTR_SCOPE("INIT", "MainInit")
-        render_settings = std::make_shared<settings>("config/config.json");
-
-        try {
-            instance = std::make_unique<nova_renderer>();
-        } catch(std::exception& e) {
-            LOG(ERROR) << "Could not initialize Nova cause " << e.what();
-        }
-    }
-
-    void nova_renderer::on_config_change(nlohmann::json &new_config) {
-		auto& shaderpack_name = new_config["loadedShaderpack"];
-        LOG(INFO) << "Shaderpack in settings: " << shaderpack_name;
-
-        if(!loaded_shaderpack) {
-            LOG(DEBUG) << "There's currently no shaderpack, so we're loading a new one";
-            load_new_shaderpack(shaderpack_name);
-            return;
-        }
-
-        bool shaderpack_in_settings_is_new = shaderpack_name != loaded_shaderpack->get_name();
-        if(shaderpack_in_settings_is_new) {
-            LOG(DEBUG) << "Shaderpack " << shaderpack_name << " is about to replace shaderpack " << loaded_shaderpack->get_name();
-            load_new_shaderpack(shaderpack_name);
-        }
-
-        LOG(DEBUG) << "Finished dealing with possible new shaderpack";
-    }
-
-    void nova_renderer::on_config_loaded(nlohmann::json &config) {
-        // TODO: Probably want to do some setup here, don't need to do that now
-    }
-
-    settings &nova_renderer::get_render_settings() {
-        return *render_settings;
-    }
-
-    texture_manager &nova_renderer::get_texture_manager() {
-        return *textures;
-    }
-
-	glfw_vk_window &nova_renderer::get_game_window() {
-		return *game_window;
-	}
-
-	input_handler &nova_renderer::get_input_handler() {
-		return *inputs;
-	}
-
-    mesh_store &nova_renderer::get_mesh_store() {
-        return *meshes;
-    }
-
-    void nova_renderer::load_new_shaderpack(const std::string &new_shaderpack_name) {
-		LOG(INFO) << "Loading a new shaderpack named " << new_shaderpack_name;
-
-        auto shader_definitions = load_shaderpack(new_shaderpack_name);
-
-        LOG(DEBUG) << "Shaderpack loaded, wiring everything together";
-
-        vk::Extent2D im_lazy;
-
-        renderpasses = std::make_shared<renderpass_manager>(im_lazy, im_lazy, context->swapchain_extent);
-
-        loaded_shaderpack = std::make_shared<shaderpack>(new_shaderpack_name, shader_definitions, renderpasses->get_final_renderpass());
-
-        LOG(INFO) << "Loading complete";
-		
-        link_up_uniform_buffers(loaded_shaderpack->get_loaded_shaders(), ubo_manager);
-        LOG(DEBUG) << "Linked up UBOs";
-    }
-
-    void nova_renderer::deinit() {
-        instance.release();
-    }
-
-    void nova_renderer::render_shader(vk::CommandBuffer command, vk_shader_program &shader) {
-        LOG(TRACE) << "Rendering everything for shader " << shader.get_name();
-
-        MTR_SCOPE("RenderLoop", "render_shader");
-
-        auto& geometry = meshes->get_meshes_for_shader(shader.get_name());
-        LOG(TRACE) << "Rendering " << geometry.size() << " things";
-
-        MTR_BEGIN("RenderLoop", "process_all");
-        for(auto& geom : geometry) {
-
-            // if(!player_camera.has_object_in_frustum(geom.bounding_box)) {
-            //     continue;
-            // }
-
-            if(geom.geometry->has_data()) {
-                if(!geom.color_texture.empty()) {
-                    auto color_texture = textures->get_texture(geom.color_texture);
-                    color_texture.bind(0);
-                }
-
-                if(geom.normalmap) {
-                    textures->get_texture(*geom.normalmap).bind(1);
-                }
-
-                if(geom.data_texture) {
-                    textures->get_texture(*geom.data_texture).bind(2);
-                }
-
-                upload_model_matrix(geom, shader);
-
-                // Bind the mesh
-                vk::DeviceSize offset = 0;
-                command.bindVertexBuffers(0, 1, &geom.geometry->vertex_buffer, &offset);
-                command.bindIndexBuffer(geom.geometry->indices, offset, vk::IndexType::eUint32);
-
-                command.drawIndexed(geom.geometry->num_indices, 1, 0, 0, 0);
-            } else {
-                LOG(TRACE) << "Skipping some geometry since it has no data";
-            }
-        }
-        MTR_END("RenderLoop", "process_all")
-    }
-
-    inline void nova_renderer::upload_model_matrix(render_object &geom, vk_shader_program &program) const {
-        glm::mat4 model_matrix = glm::translate(glm::mat4(1), geom.position);
-
-        //glUniformMatrix4fv(model_matrix_location, 1, GL_FALSE, &model_matrix[0][0]);
-    }
-
-    void nova_renderer::upload_gui_model_matrix(vk_shader_program &program) {
-        auto config = render_settings->get_options()["settings"];
-        float view_width = config["viewWidth"];
-        float view_height = config["viewHeight"];
-        float scalefactor = config["scalefactor"];
-        // The GUI matrix is super simple, just a viewport transformation
-        glm::mat4 gui_model(1.0f);
-        gui_model = glm::translate(gui_model, glm::vec3(-1.0f, 1.0f, 0.0f));
-        gui_model = glm::scale(gui_model, glm::vec3(scalefactor, scalefactor, 1.0f));
-        gui_model = glm::scale(gui_model, glm::vec3(1.0 / view_width, 1.0 / view_height, 1.0));
-        gui_model = glm::scale(gui_model, glm::vec3(1.0f, -1.0f, 1.0f));
-    }
-
-    void nova_renderer::update_gbuffer_ubos() {
-        // Big thing here is to update the camera's matrices
-
-        auto& per_frame_ubo = ubo_manager->get_per_frame_uniforms();
-
-        auto per_frame_uniform_data = per_frame_uniforms{};
-        per_frame_uniform_data.gbufferProjection = player_camera.get_projection_matrix();
-        per_frame_uniform_data.gbufferModelView = player_camera.get_view_matrix();
-
-        per_frame_ubo.send_data(per_frame_uniform_data);
-    }
-
-    camera &nova_renderer::get_player_camera() {
-        return player_camera;
-    }
-
-    std::shared_ptr<shaderpack> nova_renderer::get_shaders() {
-        return loaded_shaderpack;
-    }
-
-    void nova_renderer::end_frame() {
-        vk::Result swapchain_result = {};
-
-        vk::PresentInfoKHR present_info = {};
-        present_info.swapchainCount = 1;
-        present_info.pSwapchains = &render_context::instance.swapchain;
-        present_info.pImageIndices = &cur_swapchain_image_index;
-        present_info.pResults = &swapchain_result;
-
-        // Ensure everything is done before we submit
-        context->graphics_queue.waitIdle();
-
-        render_context::instance.present_queue.presentKHR(present_info);
-    }
-
-    void nova_renderer::begin_frame() {
-        LOG(TRACE) << "Beginning frame";
-        cur_swapchain_image_index = render_context::instance.device.acquireNextImageKHR(render_context::instance.swapchain,
-                                                                               UINT32_MAX,
-                                                                               swapchain_image_acquire_semaphore,
-                                                                               next_swapchain_image_acquired_fence).value;
-    }
-
-    void link_up_uniform_buffers(std::unordered_map<std::string, vk_shader_program> &shaders, std::shared_ptr<uniform_buffer_store> ubos) {
-        for(auto& shader : shaders) {
-            ubos->register_all_buffers_with_shader(shader.second);
-        }
-    }
+// Basic example on how to use ny.
+// We are using here the highest abstraction/utility vpp has to offer,
+// vpp::DefaultRenderer (see vpp/renderer.hpp).
+// We use the ny window library (working on windows, unix (wayland and x11)
+// and android).
+// We already have pre-processed (compiled, parsed as headers) shaders,
+// using glslangValidator and bintoheader (see data/*.h).
+
+// Pretty much all ny code was taken from the basic example (except
+// the vulkan surface creation):
+// 	- d: try to toggle server decorations
+//	- f: toggle fullscreen
+//	- m: toggle maximized state
+// 	- i: iconize (minimize) the window
+//	- n: reset to normal toplevel state
+//	- Escape: close the window
+
+// uncomment this to load renderdoc layers and name handles.
+// #define RENDERDOC
+
+#include <vpp/renderer.hpp> // vpp::DefaultRenderer
+#include <vpp/pipeline.hpp> // vpp::GraphicsPipeline
+#include <vpp/instance.hpp> // vpp::Instance
+#include <vpp/debug.hpp> // vpp::DebugCallback
+#include <vpp/device.hpp> // vpp::Device
+#include <vpp/renderPass.hpp> // vpp::RenderPass
+#include <vpp/vk.hpp> // vulkan commands
+
+#include <ny/backend.hpp> // ny::Backend
+#include <ny/appContext.hpp> // ny::AppContext
+#include <ny/windowContext.hpp> // ny::WindowContext
+#include <ny/windowListener.hpp> // ny::WindowListener
+#include <ny/windowSettings.hpp> // ny::WindowSettings
+#include <ny/keyboardContext.hpp> // ny::KeyboardContext
+#include <ny/bufferSurface.hpp> // ny::BufferSurface
+#include <ny/key.hpp> // ny::Keycode
+#include <ny/mouseButton.hpp> // ny::MouseButton
+#include <ny/image.hpp> // ny::Image
+#include <ny/event.hpp> // ny::*Event
+
+//#include <dlg/dlg.hpp> // logging
+
+#include <nytl/vecOps.hpp> // print nytl::Vec
+#include <cstring> // std::memset
+#include <set>
+
+// shader
+#include "data/intro.frag.h"
+#include "data/intro.vert.h"
+
+vpp::RenderPass createRenderPass(const vpp::Device&, vk::Format);
+vpp::Pipeline createGraphicsPipeline(const vpp::Device&, vk::RenderPass, 
+	vk::PipelineLayout);
+
+// vpp::Renderer implementation (using DefaultRenderer since we
+// don't need special framebuffer stuff).
+// Pretty much only initializes the pipeline, implements an easier resize
+// function for the window listener and implements the command buffer
+// recodring.
+class MyRenderer : public vpp::DefaultRenderer {
+public:
+	MyRenderer(vk::RenderPass, vk::SwapchainCreateInfoKHR&,
+		const vpp::Queue& present);
+
+	void resize(nytl::Vec2ui size);
+	void record(const RenderBuffer& buf) override;
+
+protected:
+	vpp::PipelineLayout pipelineLayout_;
+	vpp::Pipeline pipeline_;
+	vk::SwapchainCreateInfoKHR& scInfo_;
+};
+
+// ny::WindowListener implementation
+class MyWindowListener : public ny::WindowListener {
+public:
+	ny::AppContext* appContext;
+	ny::WindowContext* windowContext;
+	ny::ToplevelState toplevelState {ny::ToplevelState::normal};
+	MyRenderer* renderer;
+	nytl::Vec2ui windowSize {800u, 500u};
+	bool* run;
+
+public:
+	void draw(const ny::DrawEvent&) override;
+	void mouseButton(const ny::MouseButtonEvent&) override;
+	void key(const ny::KeyEvent&) override;
+	void state(const ny::StateEvent&) override;
+	void close(const ny::CloseEvent&) override;
+	void resize(const ny::SizeEvent&) override;
+	void focus(const ny::FocusEvent&) override;
+	void surfaceCreated(const ny::SurfaceCreatedEvent&) override;
+	void surfaceDestroyed(const ny::SurfaceDestroyedEvent&) override;
+};
+
+int main(int, char**)
+{
+	// ny backend/ac setup
+	auto& backend = ny::Backend::choose();
+	auto ac = backend.createAppContext();
+
+	// vulkan setup since ny needs the instance to create a surface
+	auto iniExtensions = ac->vulkanExtensions();
+	iniExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+	iniExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+
+	// enables all default layers
+	constexpr const char* layers[] = {
+		"VK_LAYER_LUNARG_standard_validation",
+#ifdef RENDERDOC
+		"VK_LAYER_RENDERDOC_Capture",
+#endif
+	};
+
+	// basic application info
+	// we use vulkan api version 1.0
+	vk::ApplicationInfo appInfo ("vpp-intro", 1, "vpp", 1, VK_API_VERSION_1_0);
+
+	vk::InstanceCreateInfo instanceInfo;
+	instanceInfo.pApplicationInfo = &appInfo;
+	instanceInfo.enabledExtensionCount = iniExtensions.size();
+	instanceInfo.ppEnabledExtensionNames = iniExtensions.data();
+	instanceInfo.enabledLayerCount = sizeof(layers) / sizeof(const char*);
+	instanceInfo.ppEnabledLayerNames = layers;
+
+	vpp::Instance instance(instanceInfo);
+
+	// create a debug callback for our instance and the default layers
+	// the default implementation will just output to std::cerr when a debug callback
+	// is received
+	vpp::DebugCallback debugCallback(instance);
+
+	// create the ny window and vukan surface
+	vk::SurfaceKHR vkSurface {};
+	auto ws = ny::WindowSettings {};
+
+	auto listener = MyWindowListener {};
+	ws.listener = &listener;
+	ws.surface = ny::SurfaceType::vulkan;
+	ws.size = {800u, 500u};
+	ws.vulkan.storeSurface = &reinterpret_cast<std::uintptr_t&>(vkSurface);
+	ws.vulkan.instance = reinterpret_cast<VkInstance>(instance.vkInstance());
+	// ws.initState = ny::ToplevelState::fullscreen;
+	auto wc = ac->createWindowContext(ws);
+
+	// now (if everything went correctly) we have the window (and a 
+	// vulkan surface) and can create the device and renderer.
+	const vpp::Queue* present;
+
+#ifdef RENDERDOC
+	auto devExtensions = {
+		VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
+	};
+	vpp::Device device(instance, vkSurface, present, devExtensions);
+#else
+	vpp::Device device(instance, vkSurface, present);
+#endif
+	//dlg_assert(present);
+
+	// we can construct everything for our renderer
+	// swapchain info and renderpass
+	// here we could try to use vsync or alpha/transform settings
+	auto scInfo = vpp::swapchainCreateInfo(device, vkSurface, {800u, 500u});
+	//dlg_info("size: {}, {}", scInfo.imageExtent.width, scInfo.imageExtent.height);
+	auto renderPass = createRenderPass(device, scInfo.imageFormat);
+
+	// our renderer
+	MyRenderer renderer(renderPass, scInfo, *present);
+
+	// finish the WindowListener setup for events...
+	auto run = true;
+	listener.appContext = ac.get();
+	listener.windowContext = wc.get();
+	listener.appContext = ac.get();
+	listener.run = &run;
+	listener.renderer = &renderer;
+
+	// ... and start the main loop.
+	// We actually render only when needed (when we get a draw event)
+	// which is probably not what you would want to do in a game but
+	// rather in a gui application (e.g. CAD app or high performance ui).
+	//dlg_info("Entering main loop");
+	while(run && ac->waitEvents());
+
+	// The loop below would be a typical game main loop.
+	// Note however that we currently also handle draw events which
+	// a game would usually not do (since it draws all the time anyways).
+
+	// while(run && ac->pollEvents()) {
+	// 	renderer.renderBlock(); // or just render without blocking
+	// }
+
+	vk::deviceWaitIdle(device);
+	//dlg_info("Returning from main with grace");
 }
 
+// MyRenderer
+MyRenderer::MyRenderer(vk::RenderPass rp, vk::SwapchainCreateInfoKHR& scInfo,
+	const vpp::Queue& present) : vpp::DefaultRenderer(present), scInfo_(scInfo)
+{
+	// pipeline
+	pipelineLayout_ = {device(), {}};
+	pipeline_ = createGraphicsPipeline(device(), rp, pipelineLayout_);
+
+	init(rp, scInfo);
+}
+
+void MyRenderer::resize(nytl::Vec2ui size)
+{
+	vpp::DefaultRenderer::recreate({size[0], size[1]}, scInfo_);
+}
+
+void MyRenderer::record(const RenderBuffer& buf) {
+	static const auto clearValue = vk::ClearValue {{0.f, 0.f, 0.f, 1.f}};
+	const auto width = scInfo_.imageExtent.width;
+	const auto height = scInfo_.imageExtent.height;
+
+	auto cmdBuf = buf.commandBuffer;
+
+	vk::beginCommandBuffer(cmdBuf, {});
+	vk::cmdBeginRenderPass(cmdBuf, {
+		renderPass(),
+		buf.framebuffer,
+		{0u, 0u, width, height},
+		1,
+		&clearValue
+	}, {});
+
+	vk::Viewport vp {0.f, 0.f, (float) width, (float) height, 0.f, 1.f};
+	vk::cmdSetViewport(cmdBuf, 0, 1, vp);
+	vk::cmdSetScissor(cmdBuf, 0, 1, {0, 0, width, height});
+	// vpp::insertDebugMarker(device(), cmdBuf, "finish setup");
+
+	// vpp::beginDebugRegion(device(), cmdBuf, "render triangle", {1, 0.5, 0.5, 1});
+	vk::cmdBindPipeline(cmdBuf, vk::PipelineBindPoint::graphics, pipeline_);
+	// vk::cmdBindVertexBuffers(cmdBuffer, 0, {vertexBuffer}, {0});
+	vk::cmdDraw(cmdBuf, 3, 1, 0, 0);
+	// vpp::endDebugRegion(device(), cmdBuf);
+
+	vk::cmdEndRenderPass(cmdBuf);
+	vk::endCommandBuffer(cmdBuf);
+}
+
+// MyWindowListener
+void MyWindowListener::draw(const ny::DrawEvent&)
+{
+	if(!renderer) { // should not happen
+		//dlg_warn("draw: no renderer");
+		return;
+	}
+
+	//dlg_info("drawing the window");
+
+	auto res = renderer->renderBlock();
+	if(res != vk::Result::success) {
+		//dlg_warn("swapchain out of date");
+		windowContext->refresh();
+	}
+}
+
+void MyWindowListener::key(const ny::KeyEvent& keyEvent)
+{
+	std::string name = "<unknown>";
+	if(appContext->keyboardContext()) {
+		auto utf8 = appContext->keyboardContext()->utf8(keyEvent.keycode);
+		if(!utf8.empty() && !ny::specialKey(keyEvent.keycode)) name = utf8;
+		else name = "<unprintable>";
+	}
+
+	auto utf8 = (keyEvent.utf8.empty() || ny::specialKey(keyEvent.keycode)) ?
+		"<unprintable>" : keyEvent.utf8;
+	//dlg_info("Key {} with keycode ({}: {}) {}, generating: {} {}", name,
+		(unsigned int) keyEvent.keycode, ny::name(keyEvent.keycode),
+		keyEvent.pressed ? "pressed" : "released", utf8,
+		keyEvent.repeat ? "(repeated)" : "");
+
+	if(keyEvent.pressed) {
+		auto keycode = keyEvent.keycode;
+		if(keycode == ny::Keycode::f) {
+			//dlg_info("Toggling fullscreen");
+			if(toplevelState != ny::ToplevelState::fullscreen) {
+				windowContext->fullscreen();
+				toplevelState = ny::ToplevelState::fullscreen;
+			} else {
+				windowContext->normalState();
+				toplevelState = ny::ToplevelState::normal;
+			}
+		} else if(keycode == ny::Keycode::n) {
+			//dlg_info("Resetting window to normal state");
+			toplevelState = ny::ToplevelState::normal;
+			windowContext->normalState();
+		} else if(keycode == ny::Keycode::escape) {
+			//dlg_info("Closing window and exiting");
+			*run = false;
+		} else if(keycode == ny::Keycode::m) {
+			//dlg_info("Toggle window maximize");
+			if(toplevelState != ny::ToplevelState::maximized) {
+				windowContext->maximize();
+				toplevelState = ny::ToplevelState::maximized;
+			} else {
+				windowContext->normalState();
+				toplevelState = ny::ToplevelState::normal;
+			}
+		} else if(keycode == ny::Keycode::i) {
+			//dlg_info("Minimizing window");
+			toplevelState = ny::ToplevelState::minimized;
+			windowContext->minimize();
+		} else if(keycode == ny::Keycode::d) {
+			//dlg_info("Trying to toggle decorations");
+			windowContext->customDecorated(!windowContext->customDecorated());
+			windowContext->refresh();
+		}
+	}
+}
+
+void MyWindowListener::close(const ny::CloseEvent&)
+{
+	//dlg_info("Window was closed by server side. Exiting");
+	*run = false;
+}
+
+void MyWindowListener::mouseButton(const ny::MouseButtonEvent& event)
+{
+	//dlg_info("mouseButton {} {} at {}", ny::mouseButtonName(event.button),
+		event.pressed ? "pressed" : "released", event.position);
+	if(event.pressed && event.button == ny::MouseButton::left) {
+		if(toplevelState != ny::ToplevelState::normal ||
+			event.position[0] < 0 || event.position[1] < 0 ||
+			static_cast<unsigned int>(event.position[0]) > windowSize[0] ||
+			static_cast<unsigned int>(event.position[1]) > windowSize[1])
+				return;
+
+		ny::WindowEdges resizeEdges = ny::WindowEdge::none;
+		if(event.position[0] < 100) {
+			resizeEdges |= ny::WindowEdge::left;
+		} else if(static_cast<unsigned int>(event.position[0]) > windowSize[0] - 100) {
+			resizeEdges |= ny::WindowEdge::right;
+		}
+
+		if(event.position[1] < 100) {
+			resizeEdges |= ny::WindowEdge::top;
+		} else if(static_cast<unsigned int>(event.position[1]) > windowSize[1] - 100) {
+			resizeEdges |= ny::WindowEdge::bottom;
+		}
+
+		auto caps = windowContext->capabilities();
+		if(resizeEdges != ny::WindowEdge::none && caps & ny::WindowCapability::beginResize) {
+			//dlg_info("Starting to resize window");
+			windowContext->beginResize(event.eventData, resizeEdges);
+		} else if(caps & ny::WindowCapability::beginMove) {
+			//dlg_info("Starting to move window");
+			windowContext->beginMove(event.eventData);
+		}
+	}
+}
+
+void MyWindowListener::focus(const ny::FocusEvent& ev)
+{
+	//dlg_info("focus: {}", ev.gained);
+}
+
+void MyWindowListener::state(const ny::StateEvent& stateEvent)
+{
+	//dlg_info("window state changed: {}", (int) stateEvent.state);
+	toplevelState = stateEvent.state;
+}
+
+void MyWindowListener::resize(const ny::SizeEvent& sizeEvent)
+{
+	//dlg_info("window resized to {}", sizeEvent.size);
+	windowSize = sizeEvent.size;
+
+	// a woraround but should be valid per spec
+	vk::deviceWaitIdle(renderer->device());
+	renderer->resize(sizeEvent.size);
+}
+
+void MyWindowListener::surfaceCreated(const ny::SurfaceCreatedEvent& surfaceEvent)
+{
+	// TODO
+}
+
+void MyWindowListener::surfaceDestroyed(const ny::SurfaceDestroyedEvent&)
+{
+	// TODO
+}
+
+// utility
+vpp::Pipeline createGraphicsPipeline(const vpp::Device& dev, vk::RenderPass rp,
+	vk::PipelineLayout layout)
+{
+	// first load the shader modules and create the shader program for our pipeline
+	// if the shaders cannot be found/compiled, this will throw (and end the application)
+	vpp::ShaderModule vertexShader(dev, intro_vert_spv_data);
+	vpp::ShaderModule fragmentShader(dev, intro_frag_spv_data);
+
+#ifdef RENDERDOC
+	vpp::nameHandle(dev, vertexShader.vkHandle(), "triangleVertexShader");
+	vpp::nameHandle(dev, fragmentShader.vkHandle(), "triangleFragmentShader");
+#endif
+
+	vpp::ShaderProgram shaderStages({
+		{vertexShader, vk::ShaderStageBits::vertex},
+		{fragmentShader, vk::ShaderStageBits::fragment}
+	});
+
+	vk::GraphicsPipelineCreateInfo pipelineInfo;
+	pipelineInfo.renderPass = rp;
+	pipelineInfo.layout = layout;
+
+	pipelineInfo.stageCount = shaderStages.vkStageInfos().size();
+	pipelineInfo.pStages = shaderStages.vkStageInfos().data();
+
+	constexpr auto stride = (2 + 4) * 4; // 2 pos floats, 4 color floats (4 byte floats)
+	vk::VertexInputBindingDescription bufferBinding {0, stride, vk::VertexInputRate::vertex};
+
+	// vertex position, color attributes
+	vk::VertexInputAttributeDescription attributes[2];
+	attributes[0].format = vk::Format::r32g32Sfloat;
+
+	attributes[1].location = 1;
+	attributes[1].format = vk::Format::r32g32b32a32Sfloat;
+	attributes[1].offset = 2 * 4; // pos: vec2f
+
+	vk::PipelineVertexInputStateCreateInfo vertexInfo;
+	// vertexInfo.vertexBindingDescriptionCount = 1;
+	vertexInfo.vertexBindingDescriptionCount = 0;
+	vertexInfo.pVertexBindingDescriptions = &bufferBinding;
+	// vertexInfo.vertexAttributeDescriptionCount = 2;
+	vertexInfo.vertexAttributeDescriptionCount = 0;
+	vertexInfo.pVertexAttributeDescriptions = attributes;
+	pipelineInfo.pVertexInputState = &vertexInfo;
+
+	vk::PipelineInputAssemblyStateCreateInfo assemblyInfo;
+	assemblyInfo.topology = vk::PrimitiveTopology::triangleList;
+	pipelineInfo.pInputAssemblyState = &assemblyInfo;
+
+	vk::PipelineRasterizationStateCreateInfo rasterizationInfo;
+	rasterizationInfo.polygonMode = vk::PolygonMode::fill;
+	rasterizationInfo.cullMode = vk::CullModeBits::none;
+	rasterizationInfo.frontFace = vk::FrontFace::counterClockwise;
+	rasterizationInfo.depthClampEnable = false;
+	rasterizationInfo.rasterizerDiscardEnable = false;
+	rasterizationInfo.depthBiasEnable = false;
+	rasterizationInfo.lineWidth = 1.f;
+	pipelineInfo.pRasterizationState = &rasterizationInfo;
+
+	vk::PipelineMultisampleStateCreateInfo multisampleInfo;
+	multisampleInfo.rasterizationSamples = vk::SampleCountBits::e1;
+	pipelineInfo.pMultisampleState = &multisampleInfo;
+
+	vk::PipelineColorBlendAttachmentState blendAttachment;
+	blendAttachment.blendEnable = false;
+	blendAttachment.colorWriteMask =
+		vk::ColorComponentBits::r |
+		vk::ColorComponentBits::g |
+		vk::ColorComponentBits::b |
+		vk::ColorComponentBits::a;
+
+	vk::PipelineColorBlendStateCreateInfo blendInfo;
+	blendInfo.attachmentCount = 1;
+	blendInfo.pAttachments = &blendAttachment;
+	pipelineInfo.pColorBlendState = &blendInfo;
+
+	vk::PipelineViewportStateCreateInfo viewportInfo;
+	viewportInfo.scissorCount = 1;
+	viewportInfo.viewportCount = 1;
+	pipelineInfo.pViewportState = &viewportInfo;
+
+	static auto dynStates = {
+		vk::DynamicState::viewport, 
+		vk::DynamicState::scissor};
+
+	vk::PipelineDynamicStateCreateInfo dynamicInfo;
+	dynamicInfo.dynamicStateCount = dynStates.size();
+	dynamicInfo.pDynamicStates = dynStates.begin();
+	pipelineInfo.pDynamicState = &dynamicInfo;
+
+	// we also use the vpp::PipelienCache in this case
+	// we try to load it from an already existent cache
+	constexpr auto cacheName = "grapihcsPipelineCache.bin";
+	vpp::PipelineCache cache {dev, cacheName};
+
+	auto vkPipeline = vk::createGraphicsPipelines(dev, cache, {pipelineInfo}).front();
+
+	// save the cache to the file we tried to load it from
+	vpp::save(cache, cacheName);
+	return {dev, vkPipeline};
+}
+
+vpp::RenderPass createRenderPass(const vpp::Device& dev, vk::Format format)
+{
+	vk::AttachmentDescription attachment {};
+
+	// color from swapchain
+	attachment.format = format;
+	attachment.samples = vk::SampleCountBits::e1;
+	attachment.loadOp = vk::AttachmentLoadOp::clear;
+	attachment.storeOp = vk::AttachmentStoreOp::store;
+	attachment.stencilLoadOp = vk::AttachmentLoadOp::dontCare;
+	attachment.stencilStoreOp = vk::AttachmentStoreOp::dontCare;
+	attachment.initialLayout = vk::ImageLayout::undefined;
+	attachment.finalLayout = vk::ImageLayout::presentSrcKHR;
+
+	vk::AttachmentReference colorReference;
+	colorReference.attachment = 0;
+	colorReference.layout = vk::ImageLayout::colorAttachmentOptimal;
+
+	// only subpass
+	vk::SubpassDescription subpass;
+	subpass.pipelineBindPoint = vk::PipelineBindPoint::graphics;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorReference;
+
+	vk::RenderPassCreateInfo renderPassInfo;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &attachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+
+	return {dev, renderPassInfo};
+}

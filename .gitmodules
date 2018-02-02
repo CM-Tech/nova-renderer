@@ -43,9 +43,6 @@
 [submodule "src/main/cpp/3rdparty/json"]
     path = src/main/cpp/3rdparty/json
     url = https://github.com/nlohmann/json.git
-[submodule "src/main/cpp/3rdparty/ny"]
-	path = src/main/cpp/3rdparty/ny
-	url = https://github.com/nyorain/ny.git
-[submodule "src/main/cpp/3rdparty/vpp"]
-	path = src/main/cpp/3rdparty/vpp
+[submodule "src/main/cpp/subprojects/vpp"]
+	path = src/main/cpp/subprojects/vpp
 	url = https://github.com/nyorain/vpp.git

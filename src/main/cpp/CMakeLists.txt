@@ -35,19 +35,20 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 find_package(JNI)
 
 # need to compile GLFW and JSON
-add_subdirectory(${3RD_PARTY_DIR}/glfw)
-add_subdirectory(${3RD_PARTY_DIR}/json)
-add_subdirectory(${3RD_PARTY_DIR}/glm)
-add_subdirectory(${3RD_PARTY_DIR}/easyloggingpp)
-add_subdirectory(${3RD_PARTY_DIR}/miniz)
-add_subdirectory(${3RD_PARTY_DIR}/googletest)
-add_subdirectory(${3RD_PARTY_DIR}/optional)
-add_subdirectory(${3RD_PARTY_DIR}/spirv-headers)
-add_subdirectory(${3RD_PARTY_DIR}/spirv-tools)
-add_subdirectory(${3RD_PARTY_DIR}/glslang)
-add_subdirectory(${3RD_PARTY_DIR}/shaderc)
-add_subdirectory(${3RD_PARTY_DIR}/vpp)
-add_subdirectory(${3RD_PARTY_DIR}/ny)
+#add_subdirectory(${3RD_PARTY_DIR}/glfw)
+#add_subdirectory(${3RD_PARTY_DIR}/json)
+#add_subdirectory(${3RD_PARTY_DIR}/glm)
+#add_subdirectory(${3RD_PARTY_DIR}/easyloggingpp)
+#add_subdirectory(${3RD_PARTY_DIR}/miniz)
+#add_subdirectory(${3RD_PARTY_DIR}/googletest)
+#add_subdirectory(${3RD_PARTY_DIR}/optional)
+#add_subdirectory(${3RD_PARTY_DIR}/spirv-headers)
+#add_subdirectory(${3RD_PARTY_DIR}/spirv-tools)
+#add_subdirectory(${3RD_PARTY_DIR}/glslang)
+#add_subdirectory(${3RD_PARTY_DIR}/shaderc)
+#add_subdirectory(${3RD_PARTY_DIR}/vpp)
+#add_subdirectory(${3RD_PARTY_DIR}/ny)
+#add_subdirectory(${3RD_PARTY_DIR}/nytl)
 
 include_directories(SYSTEM
         ${Vulkan_INCLUDE_DIRS}
@@ -66,6 +67,7 @@ include_directories(SYSTEM
         ${3RD_PARTY_DIR}/minitrace
         ${3RD_PARTY_DIR}/vpp/include
         ${3RD_PARTY_DIR}/ny/include
+        ${3RD_PARTY_DIR}/nytl/include
         )
 
 set(COMMON_LINK_LIBS ${CMAKE_DL_LIBS} glfw ${GLFW_LIBRARIES} ${Vulkan_LIBRARIES} ${JNI_LIBRARIES} shaderc stdc++fs)

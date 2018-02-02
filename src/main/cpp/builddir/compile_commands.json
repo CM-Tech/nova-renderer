@@ -1,0 +1,182 @@
+[
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "gcc @subprojects/dlg/dlg@sha/src_dlg_dlg.c.obj.rsp",
+    "file": "../subprojects/dlg/src/dlg/dlg.c"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vkpp/vk-codegen@exe/src_main.cpp.obj.rsp",
+    "file": "../subprojects/vkpp/src/main.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vkpp/vk-codegen@exe/src_output.cpp.obj.rsp",
+    "file": "../subprojects/vkpp/src/output.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vkpp/vk-codegen@exe/src_registry.cpp.obj.rsp",
+    "file": "../subprojects/vkpp/src/registry.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vkpp/vk-codegen@exe/src_pugixml_pugixml.cpp.obj.rsp",
+    "file": "../subprojects/vkpp/src/pugixml/pugixml.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/allocator.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/allocator.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/buffer.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/buffer.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/bufferOps.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/bufferOps.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/commandBuffer.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/commandBuffer.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/debug.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/debug.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/descriptor.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/descriptor.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/device.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/device.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/formats.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/formats.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/framebuffer.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/framebuffer.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/image.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/image.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/imageOps.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/imageOps.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/instance.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/instance.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/memory.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/memory.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/memoryMap.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/memoryMap.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/memoryResource.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/memoryResource.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/physicalDevice.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/physicalDevice.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/pipeline.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/pipeline.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/procAddr.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/procAddr.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/queue.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/queue.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/renderPass.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/renderPass.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/renderer.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/renderer.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/resource.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/resource.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/shader.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/shader.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/sharedBuffer.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/sharedBuffer.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/submit.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/submit.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/surface.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/surface.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/swapchain.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/swapchain.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/sync.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/sync.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/work.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/work.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @subprojects/vpp/src/vpp/vpp@sha/util_file.cpp.obj.rsp",
+    "file": "../subprojects/vpp/src/vpp/util/file.cpp"
+  },
+  {
+    "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
+    "command": "c++ @nova-renderer@exe/render_nova_renderer.cpp.obj.rsp",
+    "file": "../render/nova_renderer.cpp"
+  }
+]
