@@ -1,7 +1,7 @@
 [
   {
     "directory": "D:\\NovaRenderer\\nova-renderer\\src\\main\\cpp\\builddir",
-    "command": "gcc @subprojects/dlg/dlg@sha/src_dlg_dlg.c.obj.rsp",
+    "command": "cc @subprojects/dlg/dlg@sha/src_dlg_dlg.c.obj.rsp",
     "file": "../subprojects/dlg/src/dlg/dlg.c"
   },
   {

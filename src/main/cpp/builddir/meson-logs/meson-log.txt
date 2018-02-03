@@ -1,4 +1,4 @@
-Build started at 2018-02-01T17:36:04.210205
+Build started at 2018-02-01T19:36:14.542003
 Main binary: D:\Program Files\Meson\meson.exe
 Python system: Windows
 The Meson build system
@@ -7,24 +7,24 @@ Source dir: D:\NovaRenderer\nova-renderer\src\main\cpp
 Build dir: D:\NovaRenderer\nova-renderer\src\main\cpp\builddir
 Build type: native build
 Project name: nova-renderer
-Native C compiler: gcc (gcc 7.1.0)
-Native C++ compiler: c++ (gcc 7.1.0)
+Native C compiler: cc (gcc 6.2.0)
+Native C++ compiler: c++ (gcc 6.2.0)
 Build machine cpu family: x86_64
 Build machine cpu: x86_64
 
 Executing subproject vpp.
 
 Project name: vpp
-Native C compiler: gcc (gcc 7.1.0)
-Native C++ compiler: c++ (gcc 7.1.0)
+Native C compiler: cc (gcc 6.2.0)
+Native C++ compiler: c++ (gcc 6.2.0)
 Found pkg-config: D:\msys64\mingw64\bin\pkg-config.EXE (0.29.1)
 Determining dependency 'dlg' with pkg-config executable 'D:\\msys64\\mingw64\\bin\\pkg-config.EXE'
 
 Executing subproject dlg.
 
 Project name: dlg
-Native C compiler: gcc (gcc 7.1.0)
-Native C++ compiler: c++ (gcc 7.1.0)
+Native C compiler: cc (gcc 6.2.0)
+Native C++ compiler: c++ (gcc 6.2.0)
 Build targets in project: 1
 
 Subproject dlg finished.
@@ -34,8 +34,8 @@ Determining dependency 'vkpp' with pkg-config executable 'D:\\msys64\\mingw64\\b
 Executing subproject vkpp.
 
 Project name: vkpp
-Native C compiler: gcc (gcc 7.1.0)
-Native C++ compiler: c++ (gcc 7.1.0)
+Native C compiler: cc (gcc 6.2.0)
+Native C++ compiler: c++ (gcc 6.2.0)
 Build targets in project: 3
 
 Subproject vkpp finished.
