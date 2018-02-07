@@ -30,10 +30,6 @@ namespace nova {
         if(glfwInit() == 0) {
             LOG(FATAL) << "Could not initialize GLFW";
         }
-		init();
-    }
-
-    int glfw_vk_window::init() {
 
 		nlohmann::json &config = nova_renderer::get_render_settings().get_options();
 
@@ -52,6 +48,8 @@ namespace nova {
         }
         LOG(INFO) << "GLFW window created";
 
+        glfwGetWindowSize(window, &window_dimensions.x, &window_dimensions.y);
+
 #if __win32__
         renderdoc_manager = std::make_unique<RenderDocManager>(window, "C:\\Program Files\\RenderDoc\\renderdoc.dll", "capture");
         LOG(INFO) << "Hooked into RenderDoc";
@@ -63,9 +61,7 @@ namespace nova {
 		glfwSetCursorPosCallback(window, mouse_position_callback);
         glfwSetScrollCallback(window, mouse_scroll_callback);
         glfwSetWindowFocusCallback(window, window_focus_callback);
-		
-		return 0;
-    }
+		    }
 
     glfw_vk_window::~glfw_vk_window() {
         destroy();
@@ -168,7 +164,7 @@ namespace nova {
     }
 
     void glfw_vk_window::create_surface() {
-        auto err = glfwCreateWindowSurface(render_context::instance.vk_instance, window, nullptr, reinterpret_cast<VkSurfaceKHR *>(&render_context::instance.surface));
+        auto err = glfwCreateWindowSurface((VkInstance)render_context::instance.vk_instance, window, nullptr, reinterpret_cast<VkSurfaceKHR *>(&render_context::instance.surface));
         if(err != VK_SUCCESS) {
             LOG(FATAL) << "Could not create surface";
         }
