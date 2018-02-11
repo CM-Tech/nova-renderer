@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include "objects/camera.h"
 #include "../data_loading/settings.h"
+#include "objects/shaders/shader_resource_manager.h"
 
 namespace nova {
     class vk_shader_program;
@@ -94,7 +95,11 @@ namespace nova {
 
         camera& get_player_camera();
 
+        std::shared_ptr<render_context> get_render_context();
+
         std::shared_ptr<shaderpack> get_shaders();
+
+        std::shared_ptr<shader_resource_manager> get_shader_resources();
 
         // Overrides from iconfig_listener
 
@@ -105,6 +110,8 @@ namespace nova {
     private:
 
 		static std::shared_ptr<settings> render_settings;
+
+        std::shared_ptr<render_context> context;
 
         std::shared_ptr<glfw_vk_window> game_window;
 
@@ -120,7 +127,9 @@ namespace nova {
 
         std::shared_ptr<renderpass_manager> renderpasses;
 
-        uint32_t cur_swapchain_image_index;
+        std::shared_ptr<shader_resource_manager> shader_resources;
+
+        uint32_t cur_swapchain_image_index = 0;
 
         vk::Semaphore swapchain_image_acquire_semaphore;
 
@@ -159,8 +168,6 @@ namespace nova {
         void end_frame();
 
         void begin_frame();
-
-        render_context* context;
     };
 
     void link_up_uniform_buffers(std::unordered_map<std::string, vk_shader_program> &shaders, std::shared_ptr<uniform_buffer_store> ubos);
