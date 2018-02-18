@@ -137,6 +137,8 @@ namespace nova {
 
         camera player_camera;
 
+
+
         /*!
          * \brief Renders the GUI of Minecraft
          */
@@ -159,15 +161,17 @@ namespace nova {
          */
         void render_shader(vk::CommandBuffer shader, vk_shader_program &program);
 
-        inline void upload_gui_model_matrix(vk_shader_program &program);
-
-        void upload_model_matrix(render_object &geom, vk_shader_program &program) const;
+        inline void upload_gui_model_matrix(const render_object& gui_obj, const glm::mat4& model_matrix);
 
         void update_gbuffer_ubos();
 
         void end_frame();
 
         void begin_frame();
+
+        void update_gui_model_matrices(nlohmann::json &json);
+
+        glm::mat4x4 gui_model;
     };
 
     void link_up_uniform_buffers(std::unordered_map<std::string, vk_shader_program> &shaders, std::shared_ptr<uniform_buffer_store> ubos);
