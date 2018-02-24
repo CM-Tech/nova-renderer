@@ -1,6 +1,7 @@
 package com.continuum.nova.chunks;
 
 import com.continuum.nova.NovaNative;
+import glm.vec._3.i.Vec3i;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockFluidRenderer;
@@ -46,7 +47,12 @@ public class ChunkBuilder {
     public void createMeshesForChunk(ChunkUpdateListener.BlockUpdateRange range) {
         blockRendererDispatcher =  Minecraft.getMinecraft().getBlockRenderDispatcher();
         Map<String, List<BlockPos>> blocksForFilter = new HashMap<>();
-
+        range.min=new Vec3i((range.min.x/16)*16,0,(range.min.z/16)*16);
+        range.max=new Vec3i((range.min.x/16)*16+15,256,(range.min.z/16)*16+15);
+        /*range.min.x=(range.min.x/16)*16;
+        range.max.x=(range.min.x/16)*16+15;
+        range.min.z=(range.min.z/16)*16;
+        range.max.z=(range.min.z/16)*16+15;*/
         for(int x = range.min.x; x <= range.max.x; x++) {
             for(int y = range.min.y; y < range.max.y; y++) {
                 for(int z = range.min.z; z <= range.max.z; z++) {
@@ -54,8 +60,8 @@ public class ChunkBuilder {
                 }
             }
         }
-
-        final int chunkHashCode = 31 * range.min.x + range.min.z;
+        
+        final int chunkHashCode = 100 * (range.min.x/16) + (range.min.z/16);
 
         for(String filterName : blocksForFilter.keySet()) {
             Optional<NovaNative.mc_chunk_render_object> renderObj = makeMeshForBlocks(blocksForFilter.get(filterName), world, new BlockPos(range.min.x, range.min.y, range.min.z));
@@ -66,6 +72,8 @@ public class ChunkBuilder {
                 obj.z = range.min.z;
 
                 LOG.info("Adding render geometry for chunk {}", range);
+                LOG.debug("Adding render geometry for chunk {}", range);
+                LOG.error("Adding render geometry for chunk {},id:", range,chunkHashCode);
                 NovaNative.INSTANCE.add_chunk_geometry_for_filter(filterName, obj);
             });
         }

@@ -315,7 +315,7 @@ public class NovaRenderer implements IResourceManagerReloadListener {
             chunkUpdateThreadPool.execute(() -> chunkBuilder.createMeshesForChunk(range));
             updatedChunks.add(range);
             numChunksUpdated++;
-            if(numChunksUpdated > 10) {
+            if(numChunksUpdated > 1) {
                 break;
             }
         }
