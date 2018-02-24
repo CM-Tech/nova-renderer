@@ -82,10 +82,10 @@ namespace nova {
             obj.color_texture = "block_color";
             obj.position = def.position;
             obj.bounding_box.center = def.position;
-            obj.bounding_box.center.y = 64;
+            obj.bounding_box.center.y = 128;
             obj.bounding_box.center.x = obj.bounding_box.center.x+8;
             obj.bounding_box.center.z = obj.bounding_box.center.z+8;
-            obj.bounding_box.extents = {16, 128, 16};   // TODO: Make these values come from Minecraft
+            obj.bounding_box.extents = {16, 256, 16};   // TODO: Make these values come from Minecraft
 
             const std::string& shader_name = std::get<0>(entry);
             renderables_grouped_by_shader[shader_name].push_back(std::move(obj));
@@ -128,7 +128,7 @@ namespace nova {
         LOG(DEBUG) << "REMOVE CHUNK:" << chunk.id;
       LOG(INFO) << "REMOVE CHUNK:" << chunk.id;
         LOG(ERROR)<<"REMOVE CHUNK:" << chunk.id;
-        remove_render_objects([&](render_object& obj) { return  obj.position.x == chunk.x&& obj.position.z == chunk.z; });
+        remove_render_objects([&](render_object& obj) { return  obj.position.x == chunk.x && obj.position.z == chunk.z; });
         LOG(DEBUG) << "DONE REMOVE CHUNK:" << chunk.id;
         LOG(INFO) << "DONE REMOVE CHUNK:" << chunk.id;
         LOG(ERROR)<<"DONE REMOVE CHUNK:" << chunk.id;
