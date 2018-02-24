@@ -60,8 +60,8 @@ public class ChunkBuilder {
                 }
             }
         }
-        
-        final int chunkHashCode = 100 * (range.min.x/16) + (range.min.z/16);
+
+        final int chunkHashCode = 1000 * (range.min.x/16) + (range.min.z/16);
 
         for(String filterName : blocksForFilter.keySet()) {
             Optional<NovaNative.mc_chunk_render_object> renderObj = makeMeshForBlocks(blocksForFilter.get(filterName), world, new BlockPos(range.min.x, range.min.y, range.min.z));
@@ -71,9 +71,9 @@ public class ChunkBuilder {
                 obj.y = range.min.y;
                 obj.z = range.min.z;
 
-                LOG.info("Adding render geometry for chunk {}", range);
-                LOG.debug("Adding render geometry for chunk {}", range);
-                LOG.error("Adding render geometry for chunk {},id:", range,chunkHashCode);
+              //  LOG.info("Adding render geometry for chunk {}", range);
+                //LOG.debug("Adding render geometry for chunk {}", range);
+                LOG.error("Adding render geometry for chunk {},id:{}", range,chunkHashCode);
                 NovaNative.INSTANCE.add_chunk_geometry_for_filter(filterName, obj);
             });
         }
@@ -87,10 +87,12 @@ public class ChunkBuilder {
      */
     private void filterBlockAtPos(Map<String, List<BlockPos>> blocksForFilter, BlockPos pos) {
         IBlockState blockState = world.getBlockState(pos);
-        
+  if(blockState.getRenderType().equals(EnumBlockRenderType.INVISIBLE)) {
+    return;
+  }
 
         for(Map.Entry<String, IGeometryFilter> entry : filters.entrySet()) {
-            if(blockState.getRenderType().equals(EnumBlockRenderType.INVISIBLE)) {
+          /*  if(blockState.getRenderType().equals(EnumBlockRenderType.INVISIBLE)) {
                 if(!entry.getValue().matches(blockState)) {
                     if(!blocksForFilter.containsKey(entry.getKey())) {
                         blocksForFilter.put(entry.getKey(), new ArrayList<>());
@@ -101,20 +103,20 @@ public class ChunkBuilder {
                             newList.add(i);
                         }else{
                             LOG.info("REMOVE BLOCK?");
-                        
+
                         }
                     }
                     blocksForFilter.put(entry.getKey(),newList);
                     //blocksForFilter.get(entry.getKey()).add(pos);
                 }
-            }else{
+            }else{*/
             if(entry.getValue().matches(blockState)) {
                 if(!blocksForFilter.containsKey(entry.getKey())) {
                     blocksForFilter.put(entry.getKey(), new ArrayList<>());
                 }
                 blocksForFilter.get(entry.getKey()).add(pos);
             }
-        }
+      //  }
         }
     }
 
@@ -160,7 +162,7 @@ public class ChunkBuilder {
                         } else {
                             lmCoords = blockState.getPackedLightmapCoords(world, blockPos.offset(facing));
                         }
-                        
+
                         for(BakedQuad quad : quads) {
                             if(quad.hasTintIndex()) {
                                 colorMultiplier = blockColors.colorMultiplier(blockState, world, blockPos, quad.getTintIndex());

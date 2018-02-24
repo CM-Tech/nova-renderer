@@ -48,11 +48,12 @@ public class ChunkUpdateListener implements IWorldEventListener {
     @Override
     public void notifyBlockUpdate(World worldIn, BlockPos pos, IBlockState oldState, IBlockState newState, int flags)
     {
-        LOG.trace("Update block at " + pos);
-        LOG.debug("Update block at " + pos);
-        LOG.info("Marking blocks in range 2 ({}, {}, {}) for render update",pos.getX(), pos.getY(), pos.getZ());
-        chunksToUpdate.add(new BlockUpdateRange(new Vec3i(pos.getX(), pos.getY(), pos.getZ()), new Vec3i(pos.getX(), pos.getY(), pos.getZ())));
-   
+        //LOG.trace("Update block at " + pos);
+        //LOG.debug("Update block at " + pos);
+        //LOG.info("Marking blocks in range 2 ({}, {}, {}) for render update",pos.getX(), pos.getY(), pos.getZ());
+
+        //chunksToUpdate.add(new BlockUpdateRange(new Vec3i(pos.getX(), pos.getY(), pos.getZ()), new Vec3i(pos.getX(), pos.getY(), pos.getZ())));
+
         int i = pos.getX();
         int j = pos.getY();
         int k = pos.getZ();
@@ -67,7 +68,17 @@ public class ChunkUpdateListener implements IWorldEventListener {
     @Override
     public void markBlockRangeForRenderUpdate(int x1, int y1, int z1, int x2, int y2, int z2) {
         LOG.info("Marking blocks in range ({}, {}, {}) to ({}, {}, {}) for render update", x1, y1, z1, x2, y2, z2);
-        chunksToUpdate.add(new BlockUpdateRange(new Vec3i(x1, y1, z1), new Vec3i(x2, y2, z2)));
+        BlockUpdateRange range=new BlockUpdateRange(new Vec3i(x1, y1, z1), new Vec3i(x2, y2, z2));
+        range.min=new Vec3i((range.min.x/16)*16,0,(range.min.z/16)*16);
+        range.max=new Vec3i((range.min.x/16)*16+15,256,(range.min.z/16)*16+15);
+        boolean hasIT=false;
+        for( BlockUpdateRange oldRange: chunksToUpdate){
+          if(oldRange.min.x==range.min.x && oldRange.min.z==range.min.z){
+            LOG.error("ALREADY HAD " +oldRange.min);
+            return;
+          }
+        }
+        chunksToUpdate.add(range);
     }
 
     @Override

@@ -119,16 +119,17 @@ namespace nova {
 
         def.vertex_format = format::all_values()[chunk.format];
         def.position = {chunk.x, chunk.y, chunk.z};
-        LOG(DEBUG) << "REMOVE CHUNK:" << chunk.id;
-        LOG(INFO) << "REMOVE CHUNK:" << chunk.id;
+      //  LOG(DEBUG) << "REMOVE CHUNK:" << chunk.id;
+      //  LOG(INFO) << "REMOVE CHUNK:" << chunk.id;
         LOG(ERROR)<<"REMOVE CHUNK:" << chunk.id;
-        remove_render_objects([&](render_object& obj) { return  obj.position.x == chunk.x&& obj.position.z == chunk.z; });
-        LOG(DEBUG) << "DONE REMOVE CHUNK:" << chunk.id;
-        LOG(INFO) << "DONE REMOVE CHUNK:" << chunk.id;
+        //remove_render_objects([&](render_object& obj) { return  obj.position.x == chunk.x&& obj.position.z == chunk.z; });
+      //  LOG(DEBUG) << "DONE REMOVE CHUNK:" << chunk.id;
+      //  LOG(INFO) << "DONE REMOVE CHUNK:" << chunk.id;
         LOG(ERROR)<<"DONE REMOVE CHUNK:" << chunk.id;
         def.id = chunk.id;
-       
+
         chunk_parts_to_upload_lock.lock();
+        remove_render_objects([&](render_object& obj) { return  obj.position.x == chunk.x&& obj.position.z == chunk.z; });
         chunk_parts_to_upload.emplace(filter_name, def);
         chunk_parts_to_upload_lock.unlock();
     }
