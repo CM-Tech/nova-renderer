@@ -123,15 +123,31 @@ namespace nova {
         //remove_render_objects([&](render_object& obj) { return  obj.position.x == chunk.x&& obj.position.z == chunk.z; });
 
         def.id = chunk.id;
-        chunk_parts_to_upload_lock.lock();
+    /*    chunk_parts_to_upload_lock.lock();
         //LOG(DEBUG) << "REMOVE CHUNK:" << chunk.id;
       LOG(INFO) << "REMOVE CHUNK:" << chunk.id;
       //  LOG(ERROR)<<"REMOVE CHUNK:" << chunk.id;
-        remove_render_objects([&](render_object& obj) { return  obj.bounding_box.extents.x==16 && obj.bounding_box.extents.z==16 && obj.position.x == chunk.x && obj.position.z == chunk.z; });
+        //remove_render_objects([&](render_object& obj) { return  obj.bounding_box.extents.x==16 && obj.bounding_box.extents.z==16 && obj.position.x == chunk.x && obj.position.z == chunk.z; });
+        for(auto& group : renderables_grouped_by_shader) {
+          LOG(INFO) << "R group:"<<group.first;
+          if(group.first=="gbuffers_terrain"){
+            auto removed_elements = std::remove_if(group.second.begin(), group.second.end(), [&](render_object& obj) {
+              bool t=static_cast<int>(obj.position.x) == static_cast<int>(chunk.x) && static_cast<int>(obj.position.z) == static_cast<int>(chunk.z);
+            //  LOG(INFO) << "FOUND:"<<obj.bounding_box.extents.x<<","<<obj.bounding_box.extents.y<<","<<obj.bounding_box.extents.z;
+          //    LOG(INFO) << "FOUND2:"<<obj.position.x<<","<<obj.position.y<<","<<obj.position.z;
+              //  LOG(INFO) << "LOOK for:"<<chunk.x<<","<<chunk.y<<","<<chunk.z;
+
+              if(t){
+                  LOG(INFO) << "DONE REMOVE CHUNK TTTT:";
+              }
+               return t;  });
+            group.second.erase(removed_elements, group.second.end());
+        }
+      }
       //  LOG(DEBUG) << "DONE REMOVE CHUNK:" << chunk.id;
         LOG(INFO) << "DONE REMOVE CHUNK:" << chunk.id;
-      
-        chunk_parts_to_upload_lock.unlock();
+
+        chunk_parts_to_upload_lock.unlock();*/
         chunk_parts_to_upload_lock.lock();
         chunk_parts_to_upload.emplace(filter_name, def);
         chunk_parts_to_upload_lock.unlock();

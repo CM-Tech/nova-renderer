@@ -7,6 +7,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.IWorldEventListener;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
@@ -72,12 +73,17 @@ public class ChunkUpdateListener implements IWorldEventListener {
         range.min=new Vec3i((range.min.x/16)*16,0,(range.min.z/16)*16);
         range.max=new Vec3i((range.min.x/16)*16+15,256,(range.min.z/16)*16+15);
         boolean hasIT=false;
-        for( BlockUpdateRange oldRange: chunksToUpdate){
+          BlockPos blockpos = new BlockPos(Minecraft.getMinecraft().thePlayer);
+          BlockPos blockpos1= new BlockPos(range.min.x,range.min.y,range.min.z);
+          if(blockpos1.add(8, 8, 8).distanceSq(blockpos) > 16.0D*16.0D*4.0D){
+          //  return;
+          }
+      /*  for( BlockUpdateRange oldRange: chunksToUpdate){
           if(oldRange.min.x==range.min.x && oldRange.min.z==range.min.z){
             LOG.error("ALREADY HAD " +oldRange.min);
-            return;
+          //  return;
           }
-        }
+        }*/
         chunksToUpdate.add(range);
     }
 
