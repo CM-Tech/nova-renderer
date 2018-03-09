@@ -65,6 +65,7 @@ namespace nova {
     }
 
     void nova_renderer::render_frame() {
+        glClear(GL_DEPTH_BUFFER_BIT);
         profiler::log_all_profiler_data();
         player_camera.recalculate_frustum();
 
@@ -93,7 +94,7 @@ namespace nova {
 
     void nova_renderer::init() {
 		render_settings = std::make_unique<settings>("config/config.json");
-	
+
 		instance = std::make_unique<nova_renderer>();
     }
 
@@ -124,7 +125,13 @@ namespace nova {
                 upload_uniforms_for_object(geom, mat);
 
                 if(geom.geometry->has_data()) {
-                    upload_model_matrix(geom, mat.program);
+                  switch(geom.type) {
+                      case geometry_type::gui:
+
+                          break;
+                      default:
+                            upload_model_matrix(geom, mat.program);
+                  }
                     geom.geometry->set_active();
                     geom.geometry->draw();
                 }
@@ -598,4 +605,3 @@ namespace nova {
         glDebugMessageCallback(debug_logger, nullptr);
     }
 }
-

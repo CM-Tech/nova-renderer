@@ -58,5 +58,5 @@ in vec4 color;
 out vec4 color_out;
 
 void main() {
-    color_out = vec4(1, 0, 1, 1);
+    color_out = texture2D(colortex,uv);
 }
