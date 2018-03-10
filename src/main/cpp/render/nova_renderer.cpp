@@ -74,6 +74,8 @@ namespace nova {
 
         update_per_frame_ubos();
 
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
         try {
             for(const auto &pass : passes_list) {
                 execute_pass(pass);
@@ -117,21 +119,10 @@ namespace nova {
             LOG(DEBUG) << "We have " << meshes_for_mat.size() << " objects for the material";
             set_opengl_state_for_material(mat);
 
-            //glDisable(GL_DEPTH_TEST);
-            //glDisable(GL_CULL_FACE);
-            //glDisable(GL_BLEND);
-
             for(const auto &geom : meshes_for_mat) {
-                upload_uniforms_for_object(geom, mat);
 
                 if(geom.geometry->has_data()) {
-                  switch(geom.type) {
-                      case geometry_type::gui:
-
-                          break;
-                      default:
-                            upload_model_matrix(geom, mat.program);
-                  }
+                    upload_uniforms_for_object(geom, mat);
                     geom.geometry->set_active();
                     geom.geometry->draw();
                 }
@@ -147,6 +138,7 @@ namespace nova {
                 upload_gui_model_matrix(*mat.program);
                 break;
             default:
+                upload_model_matrix(object, mat.program);
                 LOG(WARNING) << "We don't handle geometry type " << geometry_type::to_string(object.type);
         }
     }
